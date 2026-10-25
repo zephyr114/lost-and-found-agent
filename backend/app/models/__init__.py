@@ -1,1 +1,5 @@
-"""ORM 模型（第二阶段起逐步添加 User / Item 等模型）。"""
+"""ORM 模型包（第三阶段起添加 Item 等模型）。"""
+
+from app.models.user import User
+
+__all__ = ["User"]

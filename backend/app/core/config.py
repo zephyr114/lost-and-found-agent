@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # 基础信息
     app_name: str = "Lost-and-Found Intelligent Platform"
-    app_version: str = "0.1.0"
+    app_version: str = "0.2.0"
     app_env: str = "development"
     debug: bool = True
 
@@ -26,6 +26,16 @@ class Settings(BaseSettings):
 
     # 跨域来源，逗号分隔
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
+    # JWT 认证（生产环境务必通过环境变量设置强随机密钥）
+    jwt_secret_key: str = "dev-only-secret-change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 1440  # 24 小时
+
+    # 初始管理员账号（首次启动自动创建；生产环境请在 .env 中修改）
+    admin_username: str = "admin"
+    admin_email: str = "admin@example.com"
+    admin_password: str = "admin123456"
 
     @property
     def cors_origin_list(self) -> list[str]:
