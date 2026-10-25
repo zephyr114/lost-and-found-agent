@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { deleteImage, deleteItem, getItem } from '@/api/items'
 import type { Item } from '@/api/items'
+import { submitReport } from '@/api/reports'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
@@ -14,6 +15,13 @@ const userStore = useUserStore()
 const item = ref<Item | null>(null)
 const loading = ref(true)
 const notFound = ref(false)
+const reportDialog = ref(false)
+const reportSubmitting = ref(false)
+const reportReasons = ['虚假信息', '恶意认领', '违规图片', '联系方式诈骗', '重复发布', '不当内容']
+const reportForm = reactive({
+  reason: '虚假信息',
+  description: '',
+})
 
 const isOwner = computed(() => item.value !== null && userStore.user?.id === item.value.user_id)
 const canEdit = computed(() => item.value !== null && (isOwner.value || userStore.isAdmin))
@@ -56,6 +64,27 @@ async function onRemoveImage(index: number) {
   } catch (e: unknown) {
     const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
     ElMessage.error(detail || '删除失败')
+  }
+}
+
+async function onSubmitReport() {
+  if (!item.value) return
+  reportSubmitting.value = true
+  try {
+    await submitReport({
+      target_type: 'item',
+      target_id: item.value.id,
+      reason: reportForm.reason,
+      description: reportForm.description || undefined,
+    })
+    ElMessage.success('举报已提交，管理员会尽快处理')
+    reportDialog.value = false
+    reportForm.description = ''
+  } catch (e: unknown) {
+    const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail || '提交失败')
+  } finally {
+    reportSubmitting.value = false
   }
 }
 
@@ -104,6 +133,7 @@ onMounted(load)
             </el-button>
             <el-button v-if="canEdit" type="primary" plain @click="router.push(`/items/${item.id}/edit`)">编辑</el-button>
             <el-button v-if="canEdit" type="danger" plain @click="onDelete">删除</el-button>
+            <el-button v-if="userStore.isLoggedIn && !isOwner" type="danger" plain @click="reportDialog = true">举报</el-button>
           </div>
         </div>
 
@@ -135,6 +165,23 @@ onMounted(load)
           <p>{{ item.description || '发布者未提供详细描述' }}</p>
         </div>
       </el-card>
+
+      <el-dialog v-model="reportDialog" title="举报这条信息" width="480px">
+        <el-form label-position="top">
+          <el-form-item label="举报原因">
+            <el-select v-model="reportForm.reason" style="width: 100%">
+              <el-option v-for="r in reportReasons" :key="r" :label="r" :value="r" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="补充说明（选填）">
+            <el-input v-model="reportForm.description" type="textarea" :rows="3" maxlength="1000" show-word-limit />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="reportDialog = false">取消</el-button>
+          <el-button type="danger" :loading="reportSubmitting" @click="onSubmitReport">提交举报</el-button>
+        </template>
+      </el-dialog>
     </template>
   </div>
 </template>

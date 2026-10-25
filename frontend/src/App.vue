@@ -55,7 +55,7 @@ function handleCommand(cmd: string) {
   } else if (cmd === 'messages') {
     router.push('/messages')
   } else if (cmd === 'admin') {
-    router.push('/admin/users')
+    router.push('/admin')
   } else if (cmd === 'publishLost') {
     router.push('/publish/lost')
   } else if (cmd === 'publishFound') {
@@ -129,7 +129,7 @@ function handleCommand(cmd: string) {
       <RouterView />
     </el-main>
     <el-footer class="app-footer">
-      Lost-and-Found Intelligent Platform · 第五阶段：智能 Agent
+      Lost-and-Found Intelligent Platform · 第六阶段：管理后台
     </el-footer>
   </el-container>
 </template>

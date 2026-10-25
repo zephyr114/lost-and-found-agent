@@ -116,7 +116,7 @@ def test_admin_api_allowed_for_admin(client):
     admin_token = login.json()["access_token"]
     r = client.get("/api/admin/users", headers=auth_header(admin_token))
     assert r.status_code == 200
-    users = r.json()
+    users = r.json()["items"]
     assert any(u["role"] == "admin" for u in users)
 
 

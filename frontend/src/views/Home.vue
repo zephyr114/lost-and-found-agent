@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { getHealth } from '@/api/health'
 import type { HealthInfo } from '@/api/health'
+import { getActiveAnnouncements } from '@/api/announcements'
+import type { Announcement } from '@/api/admin'
+import { useUserStore } from '@/stores/user'
 
 type Status = 'loading' | 'ok' | 'degraded' | 'error'
 
+const router = useRouter()
+const userStore = useUserStore()
+
 const status = ref<Status>('loading')
 const health = ref<HealthInfo | null>(null)
+const announcements = ref<Announcement[]>([])
 
 onMounted(async () => {
   try {
@@ -16,14 +24,27 @@ onMounted(async () => {
   } catch {
     status.value = 'error'
   }
+  try {
+    announcements.value = await getActiveAnnouncements()
+  } catch {
+    announcements.value = []
+  }
 })
 
 const features = [
-  { icon: '📝', title: '发布失物 / 招领', desc: '填写丢失或捡到物品的详细信息' },
-  { icon: '🔍', title: '物品搜索', desc: '按关键词、类别、地点和时间筛选' },
-  { icon: '🤖', title: '智能匹配', desc: 'AI Agent 自动推荐可能匹配的物品' },
-  { icon: '🛡️', title: '审核管理', desc: '管理员审核信息、处理举报' },
+  { icon: '📝', title: '发布失物 / 招领', desc: '填写丢失或捡到物品的详细信息', path: '/publish/lost' },
+  { icon: '🔍', title: '物品搜索', desc: '按关键词、类别、地点和时间筛选', path: '/items' },
+  { icon: '🤖', title: '智能匹配', desc: 'AI Agent 自动推荐可能匹配的物品', path: '/matches' },
+  { icon: '🛡️', title: '审核管理', desc: '管理员审核信息、处理举报', path: '/admin' },
 ]
+
+function open(path: string) {
+  if (path.startsWith('/admin') && !userStore.isAdmin) {
+    router.push('/login')
+    return
+  }
+  router.push(path)
+}
 </script>
 
 <template>
@@ -35,7 +56,7 @@ const features = [
 
     <el-row :gutter="16" class="features">
       <el-col v-for="f in features" :key="f.title" :xs="12" :sm="6">
-        <el-card class="feature-card" shadow="hover">
+        <el-card class="feature-card" shadow="hover" @click="open(f.path)">
           <div class="feature-card__icon">{{ f.icon }}</div>
           <h3 class="feature-card__title">{{ f.title }}</h3>
           <p class="feature-card__desc">{{ f.desc }}</p>
@@ -43,7 +64,16 @@ const features = [
       </el-col>
     </el-row>
 
-    <el-card class="health-card" shadow="never">
+    <el-card v-if="announcements.length" class="home-card" shadow="never">
+      <template #header><span>📢 系统公告</span></template>
+      <div v-for="a in announcements" :key="a.id" class="announcement">
+        <div class="announcement__title">· {{ a.title }}</div>
+        <div class="announcement__content">{{ a.content }}</div>
+        <div class="announcement__time">{{ new Date(a.created_at).toLocaleString('zh-CN') }}</div>
+      </div>
+    </el-card>
+
+    <el-card class="home-card" shadow="never">
       <template #header>
         <span>系统状态（后端 /health 健康检查）</span>
       </template>
@@ -98,6 +128,7 @@ const features = [
   text-align: center;
   height: 100%;
   margin-bottom: 16px;
+  cursor: pointer;
 }
 .feature-card__icon {
   font-size: 40px;
@@ -112,7 +143,28 @@ const features = [
   font-size: 13px;
   margin: 0;
 }
-.health-card {
+.home-card {
   margin-bottom: 24px;
+}
+.announcement {
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--el-border-color-lighter);
+}
+.announcement:last-child {
+  border-bottom: none;
+}
+.announcement__title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.announcement__content {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  white-space: pre-wrap;
+}
+.announcement__time {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 </style>

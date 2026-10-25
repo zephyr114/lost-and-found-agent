@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import admin, auth, claims, health, items, matches, messages, users
+from app.api import admin, announcements, auth, claims, health, items, matches, messages, reports, users
 from app.core.config import settings
 from app.core.security import hash_password
 from app.database.session import Base, SessionLocal, engine
@@ -75,6 +75,8 @@ app.include_router(items.router, prefix="/api")
 app.include_router(claims.router, prefix="/api")
 app.include_router(messages.router, prefix="/api")
 app.include_router(matches.router, prefix="/api")
+app.include_router(reports.router, prefix="/api")
+app.include_router(announcements.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 
 # 上传的图片通过 /uploads/... 访问

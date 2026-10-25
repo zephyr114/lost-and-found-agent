@@ -99,10 +99,19 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/admin/users',
-      name: 'adminUsers',
-      component: () => import('@/views/AdminUsers.vue'),
+      path: '/admin',
+      component: () => import('@/layouts/AdminLayout.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
+      children: [
+        { path: '', name: 'adminDashboard', component: () => import('@/views/admin/AdminDashboard.vue') },
+        { path: 'items', name: 'adminItems', component: () => import('@/views/admin/AdminItems.vue') },
+        { path: 'users', name: 'adminUsers', component: () => import('@/views/admin/AdminUsers.vue') },
+        { path: 'claims', name: 'adminClaims', component: () => import('@/views/admin/AdminClaims.vue') },
+        { path: 'reports', name: 'adminReports', component: () => import('@/views/admin/AdminReports.vue') },
+        { path: 'announcements', name: 'adminAnnouncements', component: () => import('@/views/admin/AdminAnnouncements.vue') },
+        { path: 'agent-logs', name: 'adminAgentLogs', component: () => import('@/views/admin/AdminAgentLogs.vue') },
+        { path: 'logs', name: 'adminLogs', component: () => import('@/views/admin/AdminOperationLogs.vue') },
+      ],
     },
     {
       path: '/:pathMatch(.*)*',
