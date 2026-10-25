@@ -1,15 +1,21 @@
 """FastAPI 应用入口。"""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from app.api import admin, auth, health, users
+from app.api import admin, auth, health, items, users
 from app.core.config import settings
 from app.core.security import hash_password
 from app.database.session import Base, SessionLocal, engine
 from app.models import User
+
+# 上传文件静态目录：backend/uploads
+UPLOAD_DIR = Path(__file__).resolve().parent.parent / settings.upload_dir
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def seed_admin() -> None:
@@ -65,4 +71,8 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(auth.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
+app.include_router(items.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
+
+# 上传的图片通过 /uploads/... 访问
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")

@@ -50,3 +50,21 @@ def get_current_admin(user: User = Depends(get_current_user)) -> User:
     if user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="需要管理员权限")
     return user
+
+
+def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """可选登录：凭证有效时返回用户，否则返回 None（供公开接口使用）。"""
+    if credentials is None:
+        return None
+    try:
+        payload = decode_access_token(credentials.credentials)
+        user_id = int(payload["sub"])
+    except (jwt.PyJWTError, KeyError, ValueError):
+        return None
+    user = db.get(User, user_id)
+    if user is None or user.status != "active":
+        return None
+    return user

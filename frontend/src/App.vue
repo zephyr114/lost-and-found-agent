@@ -9,8 +9,14 @@ const router = useRouter()
 function handleCommand(cmd: string) {
   if (cmd === 'profile') {
     router.push('/profile')
+  } else if (cmd === 'myItems') {
+    router.push('/my/items')
   } else if (cmd === 'admin') {
     router.push('/admin/users')
+  } else if (cmd === 'publishLost') {
+    router.push('/publish/lost')
+  } else if (cmd === 'publishFound') {
+    router.push('/publish/found')
   } else if (cmd === 'logout') {
     userStore.logout()
     router.push('/')
@@ -25,9 +31,22 @@ function handleCommand(cmd: string) {
         <router-link to="/" class="app-logo">
           🔍 失物招领智能平台
         </router-link>
-        <span class="app-tagline">Lost-and-Found Intelligent Platform</span>
+        <nav class="app-nav">
+          <router-link to="/" class="app-nav__link">首页</router-link>
+          <router-link to="/items?type=lost" class="app-nav__link">失物信息</router-link>
+          <router-link to="/items?type=found" class="app-nav__link">招领信息</router-link>
+        </nav>
         <div class="app-header__right">
           <template v-if="userStore.isLoggedIn">
+            <el-dropdown @command="handleCommand">
+              <el-button type="primary" plain size="small">＋ 发布</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="publishLost">发布失物</el-dropdown-item>
+                  <el-dropdown-item command="publishFound">发布招领</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <el-dropdown @command="handleCommand">
               <span class="user-chip">
                 {{ userStore.user?.username }}
@@ -38,6 +57,7 @@ function handleCommand(cmd: string) {
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                  <el-dropdown-item command="myItems">我的发布</el-dropdown-item>
                   <el-dropdown-item v-if="userStore.isAdmin" command="admin">管理后台</el-dropdown-item>
                   <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
@@ -49,7 +69,7 @@ function handleCommand(cmd: string) {
               <el-button text type="primary">登录</el-button>
             </router-link>
             <router-link to="/register">
-              <el-button type="primary">注册</el-button>
+              <el-button type="primary" size="small">注册</el-button>
             </router-link>
           </template>
         </div>
@@ -59,7 +79,7 @@ function handleCommand(cmd: string) {
       <RouterView />
     </el-main>
     <el-footer class="app-footer">
-      Lost-and-Found Intelligent Platform · 第二阶段：用户系统
+      Lost-and-Found Intelligent Platform · 第三阶段：失物和招领功能
     </el-footer>
   </el-container>
 </template>
@@ -79,23 +99,32 @@ function handleCommand(cmd: string) {
   margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 .app-logo {
   font-size: 20px;
   font-weight: 600;
   color: var(--el-color-primary);
   text-decoration: none;
+  white-space: nowrap;
 }
-.app-tagline {
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
+.app-nav {
+  display: flex;
+  gap: 14px;
+}
+.app-nav__link {
+  color: var(--el-text-color-regular);
+  text-decoration: none;
+  font-size: 14px;
+}
+.app-nav__link:hover {
+  color: var(--el-color-primary);
 }
 .app-header__right {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 .user-chip {
   display: inline-flex;

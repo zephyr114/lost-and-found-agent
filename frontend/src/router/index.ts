@@ -29,10 +29,37 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      // 发布页面：第三阶段实现，本阶段仅用于验证登录守卫
-      path: '/publish',
-      name: 'publish',
-      component: () => import('@/views/PublishPlaceholder.vue'),
+      path: '/items',
+      name: 'items',
+      component: () => import('@/views/ItemsView.vue'),
+    },
+    {
+      path: '/items/:id(\\d+)',
+      name: 'itemDetail',
+      component: () => import('@/views/ItemDetailView.vue'),
+    },
+    {
+      path: '/publish/lost',
+      name: 'publishLost',
+      component: () => import('@/views/ItemFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/publish/found',
+      name: 'publishFound',
+      component: () => import('@/views/ItemFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/items/:id(\\d+)/edit',
+      name: 'itemEdit',
+      component: () => import('@/views/ItemFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/my/items',
+      name: 'myItems',
+      component: () => import('@/views/MyItemsView.vue'),
       meta: { requiresAuth: true },
     },
     {

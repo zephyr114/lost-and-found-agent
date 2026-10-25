@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     admin_email: str = "admin@example.com"
     admin_password: str = "admin123456"
 
+    # 文件上传
+    upload_dir: str = "uploads"  # 相对 backend 目录
+    max_upload_size_mb: int = 5
+    max_images_per_item: int = 6
+
     @property
     def cors_origin_list(self) -> list[str]:
         """将逗号分隔的跨域来源转换为列表。"""
