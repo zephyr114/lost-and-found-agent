@@ -86,9 +86,16 @@ onMounted(load)
               <el-tag v-if="item.status === 'closed'" type="info" size="small">已关闭</el-tag>
             </div>
           </div>
-          <div v-if="canEdit" class="detail-page__actions">
-            <el-button type="primary" plain @click="router.push(`/items/${item.id}/edit`)">编辑</el-button>
-            <el-button type="danger" plain @click="onDelete">删除</el-button>
+          <div class="detail-page__actions">
+            <el-button
+              v-if="item.item_type === 'found' && item.audit_status === 'approved' && item.status === 'active' && userStore.isLoggedIn && !isOwner"
+              type="success"
+              @click="router.push(`/items/${item.id}/claim`)"
+            >
+              申请认领
+            </el-button>
+            <el-button v-if="canEdit" type="primary" plain @click="router.push(`/items/${item.id}/edit`)">编辑</el-button>
+            <el-button v-if="canEdit" type="danger" plain @click="onDelete">删除</el-button>
           </div>
         </div>
 

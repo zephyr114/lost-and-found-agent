@@ -63,6 +63,30 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/items/:id(\\d+)/claim',
+      name: 'claimForm',
+      component: () => import('@/views/ClaimFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/my/claims',
+      name: 'myClaims',
+      component: () => import('@/views/MyClaimsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/my/claims/received',
+      name: 'receivedClaims',
+      component: () => import('@/views/ReceivedClaimsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/messages',
+      name: 'messages',
+      component: () => import('@/views/MessagesView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/admin/users',
       name: 'adminUsers',
       component: () => import('@/views/AdminUsers.vue'),

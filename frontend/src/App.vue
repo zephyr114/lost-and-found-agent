@@ -1,16 +1,59 @@
 <script setup lang="ts">
+import { onUnmounted, ref, watch } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 
+import { getUnreadCount } from '@/api/messages'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 const router = useRouter()
+const unread = ref(0)
+let timer: ReturnType<typeof setInterval> | null = null
+
+async function refreshUnread() {
+  if (!userStore.isLoggedIn) {
+    unread.value = 0
+    return
+  }
+  try {
+    unread.value = await getUnreadCount()
+  } catch {
+    unread.value = 0
+  }
+}
+
+watch(
+  () => userStore.isLoggedIn,
+  (loggedIn) => {
+    if (loggedIn) {
+      refreshUnread()
+      if (!timer) timer = setInterval(refreshUnread, 30000)
+    } else {
+      if (timer) {
+        clearInterval(timer)
+        timer = null
+      }
+      unread.value = 0
+    }
+  },
+  { immediate: true },
+)
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
 
 function handleCommand(cmd: string) {
   if (cmd === 'profile') {
     router.push('/profile')
   } else if (cmd === 'myItems') {
     router.push('/my/items')
+  } else if (cmd === 'myClaims') {
+    router.push('/my/claims')
+  } else if (cmd === 'receivedClaims') {
+    router.push('/my/claims/received')
+  } else if (cmd === 'messages') {
+    router.push('/messages')
   } else if (cmd === 'admin') {
     router.push('/admin/users')
   } else if (cmd === 'publishLost') {
@@ -38,6 +81,9 @@ function handleCommand(cmd: string) {
         </nav>
         <div class="app-header__right">
           <template v-if="userStore.isLoggedIn">
+            <el-badge :value="unread" :hidden="unread === 0" :max="99" class="app-header__msg">
+              <el-button text @click="router.push('/messages')">💬 消息</el-button>
+            </el-badge>
             <el-dropdown @command="handleCommand">
               <el-button type="primary" plain size="small">＋ 发布</el-button>
               <template #dropdown>
@@ -58,6 +104,9 @@ function handleCommand(cmd: string) {
                 <el-dropdown-menu>
                   <el-dropdown-item command="profile">个人中心</el-dropdown-item>
                   <el-dropdown-item command="myItems">我的发布</el-dropdown-item>
+                  <el-dropdown-item command="myClaims">我的认领申请</el-dropdown-item>
+                  <el-dropdown-item command="receivedClaims">收到的认领申请</el-dropdown-item>
+                  <el-dropdown-item command="messages">消息中心</el-dropdown-item>
                   <el-dropdown-item v-if="userStore.isAdmin" command="admin">管理后台</el-dropdown-item>
                   <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
@@ -79,7 +128,7 @@ function handleCommand(cmd: string) {
       <RouterView />
     </el-main>
     <el-footer class="app-footer">
-      Lost-and-Found Intelligent Platform · 第三阶段：失物和招领功能
+      Lost-and-Found Intelligent Platform · 第四阶段：认领和消息功能
     </el-footer>
   </el-container>
 </template>

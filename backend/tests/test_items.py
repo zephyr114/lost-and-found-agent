@@ -88,7 +88,8 @@ def test_pending_item_hidden_from_public(client):
     item_id = client.post("/api/items", json=item_payload(), headers=auth(token)).json()["id"]
     # 未登录看不到
     assert client.get(f"/api/items/{item_id}").status_code == 404
-    assert client.get("/api/items").json()["total"] == 0
+    public_ids = [i["id"] for i in client.get("/api/items").json()["items"]]
+    assert item_id not in public_ids  # 待审核物品不出现在公开列表
     # 其他用户也看不到
     other = register(client)
     assert client.get(f"/api/items/{item_id}", headers=auth(other)).status_code == 404
