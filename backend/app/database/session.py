@@ -17,7 +17,7 @@ def _resolve_database_url(url: str) -> str:
     """将相对路径的 SQLite 地址锚定到 backend 目录，避免受启动目录影响。"""
     if url.startswith("sqlite:///./"):
         backend_dir = Path(__file__).resolve().parent.parent.parent
-        db_path = backend_dir / "lost_found.db"
+        db_path = backend_dir / url.removeprefix("sqlite:///./")
         return f"sqlite:///{db_path.as_posix()}"
     return url
 

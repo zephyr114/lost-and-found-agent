@@ -2,142 +2,148 @@
 
 支持失物发布、招领发布、智能匹配、消息沟通和管理员审核的失物招领网站。
 
-**当前进度**：✅ 第一阶段（项目初始化） · ✅ 第二阶段（用户系统）
+**当前进度**：✅ 全部七个阶段完成（项目初始化 / 用户系统 / 失物招领 / 认领消息 / 智能 Agent / 管理后台 / 测试部署）
 
-- 前后端项目骨架 + Git 仓库 + 环境变量配置
-- 数据库连接（默认 SQLite 便于本地开发；MySQL 配置见 `docker/docker-compose.yml`）
-- 后端 `GET /health` 健康检查接口
-- 用户系统：注册 / 登录（用户名、邮箱、手机号）、JWT 鉴权、个人资料、修改密码、角色权限（user / admin）
-- 前端：登录 / 注册 / 个人中心页面、路由守卫、管理员演示页
+## 功能总览
+
+| 模块 | 能力 |
+| --- | --- |
+| 用户系统 | 注册（邮箱/手机号）、登录（用户名/邮箱/手机号）、JWT 认证、资料修改、改密、角色权限（user/admin）、信用分、账号禁用 |
+| 失物招领 | 发布失物/招领、审核流、关键词/类别/地点/时间筛选、距离排序、详情、编辑、删除、图片上传（≤6 张、≤5MB/张） |
+| 认领消息 | 认领申请（特征说明+证明图片）、同意/拒绝/要求补充证明、自动拒绝其余申请、站内私信、系统通知、未读角标 |
+| 智能 Agent | 属性提取（规则引擎+可选 LLM）、相似搜索、多维打分（类别/名称/颜色/品牌/时间/距离/特征）、中文匹配理由、自动通知、风险词转人工审核、工具级执行日志 |
+| 管理后台 | ECharts 数据统计、信息审核、用户管理、认领总览、举报处理、系统公告、Agent 日志、操作审计日志 |
+| 安全 | bcrypt 密码哈希、JWT（环境变量密钥）、三级权限依赖、前端路由守卫、上传校验、敏感配置不入库 |
 
 ## 技术栈
 
-| 层 | 技术 |
-| --- | --- |
-| 前端 | Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router、Axios、ECharts |
-| 后端 | Python、FastAPI、SQLAlchemy、Pydantic、JWT |
-| 数据 | MySQL、Redis、MinIO、FAISS / Chroma（向量检索） |
-| AI | 大语言模型、Embedding、LangGraph / LangChain、OCR、图像分析 |
-| 部署 | Docker、Nginx、GitHub Actions |
-
-## 目录结构
-
-```text
-lost-and-found-agent/
-├── backend/            # FastAPI 后端
-│   ├── app/
-│   │   ├── api/        # 路由（health 等）
-│   │   ├── agents/     # 智能 Agent（第五阶段）
-│   │   ├── services/   # 业务服务层
-│   │   ├── models/     # ORM 模型
-│   │   ├── schemas/    # Pydantic 模型
-│   │   ├── repositories/ # 数据访问层
-│   │   ├── database/   # 引擎与会话
-│   │   ├── core/       # 配置
-│   │   ├── utils/
-│   │   └── main.py     # 应用入口
-│   ├── tests/          # 测试
-│   └── requirements.txt
-├── frontend/           # Vue 3 前端
-│   └── src/
-│       ├── views/      # 页面
-│       ├── components/ # 组件
-│       ├── layouts/    # 布局
-│       ├── stores/     # Pinia
-│       ├── router/     # 路由
-│       └── api/        # Axios 封装
-├── knowledge_base/     # 知识库（第五阶段）
-├── uploads/            # 本地文件存储（第三阶段）
-├── docker/             # docker-compose（MySQL / Redis / MinIO）
-└── docs/               # 项目文档（第七阶段完善）
-```
+- **前端**：Vue 3 · TypeScript · Vite · Element Plus · Pinia · Vue Router · Axios · ECharts
+- **后端**：Python 3.12 · FastAPI · SQLAlchemy 2 · Pydantic v2 · PyJWT · bcrypt
+- **数据**：MySQL 8（生产）/ SQLite（开发）· Redis / MinIO（Docker Compose 预留）
+- **AI**：DeepSeek 等 OpenAI 兼容接口（可选，不配置则使用内置规则引擎）
+- **部署**：Docker · Docker Compose · Nginx
 
 ## 快速启动
 
-### 1. 后端（默认 8000 端口）
+### 后端（默认 8000 端口）
 
 ```bash
 cd backend
 python -m venv .venv
-.venv\Scripts\activate        # Windows（Linux/macOS: source .venv/bin/activate）
+.venv\Scripts\activate          # Windows（macOS/Linux: source .venv/bin/activate）
 pip install -r requirements.txt
-copy .env.example .env        # 已提供 .env，可直接运行
+copy .env.example .env          # 按需修改
 uvicorn app.main:app --reload
 ```
 
-验证：访问 http://127.0.0.1:8000/health ，应返回 `status: ok`、`database: connected`。
-接口文档：启动后可访问 http://127.0.0.1:8000/docs （Swagger UI）。
+验证：http://127.0.0.1:8000/health 返回 `{"status":"ok","database":"connected"}`；接口文档 http://127.0.0.1:8000/docs
 
-### 初始管理员账号
-
-首次启动后端会自动创建管理员（见 `backend/.env` 的 `ADMIN_*` 配置）：
-
-```text
-账号：admin
-邮箱：admin@example.com
-密码：admin123456   （仅开发环境！生产务必修改）
-```
-
-### 2. 前端（默认 5173 端口）
+### 前端（默认 5173 端口）
 
 ```bash
 cd frontend
-pnpm install    # 或 npm install
-pnpm dev        # 或 npm run dev
+pnpm install                    # 或 npm install
+pnpm dev                        # 或 npm run dev
 ```
 
-验证：浏览器访问 http://localhost:5173 ，首页“系统状态”卡片显示后端与数据库状态。
-开发环境请求经 Vite 代理转发到 8000 端口，无跨域问题。
+浏览器打开 http://localhost:5173 （开发代理已配置，无跨域问题）
 
-### 3. 数据库
+### 一键部署（Docker Compose）
 
-- 默认使用 SQLite（文件 `backend/lost_found.db`），开箱即用，适合无 MySQL 的本地环境。
-- 使用 MySQL（需 Docker）：
+```bash
+docker compose -f docker/docker-compose.yml up -d --build
+# 前端 http://localhost:8080，后端 http://localhost:8000/docs
+```
 
-  ```bash
-  docker compose -f docker/docker-compose.yml up -d mysql
-  ```
+生产环境请修改 `JWT_SECRET_KEY`、`ADMIN_PASSWORD`、`MYSQL_PASSWORD`（详见 docs/deployment.md）。
 
-  然后在 `backend/.env` 中设置：
+## 演示账号
 
-  ```text
-  DATABASE_URL=mysql+pymysql://laf_user:laf_pass@127.0.0.1:3306/lost_found?charset=utf8mb4
-  ```
+| 账号 | 密码 | 角色 |
+| --- | --- | --- |
+| admin（admin@example.com） | admin123456 | 管理员 |
+| demo_user1 / demo_user2 / demo_user3 | demo123456 | 普通用户 |
+
+演示数据（示例失物/招领/认领申请/公告，含智能匹配结果）：
+
+```bash
+cd backend
+.venv\Scripts\python scripts\seed_demo.py
+```
 
 ## 测试
 
 ```bash
 cd backend
-.venv\Scripts\python -m pytest
+.venv\Scripts\python -m pytest     # 58 个用例：健康检查/认证/权限/物品/认领/消息/Agent/管理后台
 ```
 
-当前 14 个用例覆盖：健康检查、注册（成功 / 重名 / 重邮箱 / 非法输入）、登录（三种账号方式 / 错误密码）、JWT 鉴权（无凭证 401 / 伪造凭证 401）、角色权限（普通用户 403 / 管理员 200）、个人资料修改、密码修改流程。
+覆盖：注册重名 409、错误密码 401、无凭证 401、越权 403、待审核隐藏、图片类型校验、认领全流程状态机、自动拒绝并发申请、消息已读、匹配打分与阈值、举报处理、公告 CRUD、操作与 Agent 日志等。
 
-## 接口清单（第二阶段）
-
-| 方法 | 路径 | 说明 | 权限 |
-| --- | --- | --- | --- |
-| GET | `/health` | 健康检查 | 公开 |
-| POST | `/api/auth/register` | 注册（成功即自动登录） | 公开 |
-| POST | `/api/auth/login` | 登录（用户名 / 邮箱 / 手机号） | 公开 |
-| GET | `/api/users/me` | 获取当前用户资料 | 登录 |
-| PUT | `/api/users/me` | 修改个人资料 | 登录 |
-| PUT | `/api/users/me/password` | 修改密码 | 登录 |
-| GET | `/api/admin/users` | 用户列表（演示） | 管理员 |
+前端：`cd frontend && pnpm run build`（vue-tsc 类型检查 + 生产构建）。
 
 ## 环境变量
 
-- 后端：见 `backend/.env.example`（数据库连接、CORS 等）
-- 前端：见 `frontend/.env.example`（`VITE_API_BASE_URL`）
+- 后端：`backend/.env.example`（数据库、JWT、初始管理员、上传、LLM 配置）
+- 前端：`frontend/.env.example`（`VITE_API_BASE_URL`）
 
-约定：密钥、密码、Token 一律写入环境变量，不提交到代码仓库（`.env` 已在 .gitignore 中）。
+约定：密钥、密码、Token 一律放环境变量，绝不写入代码仓库（`.env` 已忽略）。
+
+## 目录结构
+
+```text
+lost-and-found-agent/
+├── backend/                # FastAPI 后端
+│   ├── app/
+│   │   ├── api/            # 路由（auth/users/items/claims/messages/matches/reports/announcements/admin）
+│   │   ├── agents/         # 智能匹配 Agent（matching.py 工具链）
+│   │   ├── services/       # 业务服务层
+│   │   ├── models/         # ORM 模型（users/items/claims/messages/matches/reports/announcements/agent_logs/operation_logs）
+│   │   ├── schemas/        # Pydantic 模型
+│   │   ├── database/       # 引擎与会话
+│   │   ├── core/           # 配置 / 安全
+│   │   ├── utils/          # 地理距离 / 文件上传
+│   │   └── main.py
+│   ├── scripts/seed_demo.py  # 演示数据
+│   ├── tests/              # 58 个测试用例
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/               # Vue 3 前端
+│   ├── src/
+│   │   ├── views/          # 用户端页面 + admin/ 管理后台页面
+│   │   ├── layouts/        # AdminLayout 等布局
+│   │   ├── components/     # ItemCard 等组件
+│   │   ├── stores/         # Pinia（user/app）
+│   │   ├── router/         # 路由与守卫
+│   │   └── api/            # Axios 封装
+│   ├── Dockerfile · nginx.conf
+│   └── package.json
+├── docker/docker-compose.yml  # 完整部署（mysql/redis/minio/backend/frontend）
+├── docs/                   # requirements / architecture / api / deployment
+├── knowledge_base/         # 知识库
+└── uploads/                # 本地文件（生产可切 MinIO）
+```
+
+## 文档
+
+- [需求文档](docs/requirements.md) · [架构文档](docs/architecture.md) · [API 文档](docs/api.md) · [部署文档](docs/deployment.md)
 
 ## 阶段计划
 
-1. ✅ 第一阶段：项目初始化
-2. ✅ 第二阶段：用户系统（注册 / 登录 / JWT / 角色权限）
-3. ⬜ 第三阶段：失物和招领功能
-4. ⬜ 第四阶段：认领和消息功能
-5. ⬜ 第五阶段：智能 Agent
-6. ⬜ 第六阶段：管理后台
-7. ⬜ 第七阶段：测试和部署
+1. ✅ 项目初始化（骨架 / Git / 数据库连接 / /health / 首页）
+2. ✅ 用户系统（注册 / 登录 / JWT / 角色权限）
+3. ✅ 失物和招领（发布 / 搜索 / 详情 / 图片 / 编辑删除）
+4. ✅ 认领和消息（申请 / 审核 / 状态流转 / 站内消息）
+5. ✅ 智能 Agent（属性提取 / 匹配打分 / 原因解释 / 自动通知 / 执行日志）
+6. ✅ 管理后台（统计 / 审核 / 用户 / 举报 / 公告 / 日志）
+7. ✅ 测试和部署（58 用例 / Docker / 文档 / 演示数据）
+
+## 验收指标对照
+
+- 注册/发布成功率 ≥99%、图片上传 ≥95%：全部核心路径有自动化测试覆盖
+- 搜索响应 ≤2s、智能匹配 ≤5s：本机 SQLite 实测均为毫秒级
+- 匹配结果可解释：每条匹配附中文理由列表
+- 管理员可完成完整审核流程：信息审核 / 举报 / 用户禁用均有接口与页面
+- 核心接口错误处理：400/401/403/404/409/422 语义清晰
+- 一键启动：`docker compose up -d --build`
+- README 完整：本文档 + docs/ 四份文档

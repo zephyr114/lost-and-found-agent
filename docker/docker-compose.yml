@@ -1,6 +1,6 @@
-# 失物招领智能平台基础设施
-# 第一阶段只需 MySQL（可选，本机无 MySQL 时后端默认使用 SQLite）
-# Redis / MinIO 供后续阶段（登录态、缓存、图片存储）使用
+# 失物招领智能平台 —— 完整 Docker 部署
+# 启动：docker compose -f docker/docker-compose.yml up -d --build
+# 前端：http://localhost:8080   后端接口：http://localhost:8000/docs
 services:
   mysql:
     image: mysql:8.4
@@ -46,7 +46,41 @@ services:
     volumes:
       - minio_data:/data
 
+  backend:
+    build: ../backend
+    container_name: laf-backend
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      DEBUG: "false"
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-laf_user}:${MYSQL_PASSWORD:-laf_pass}@mysql:3306/${MYSQL_DATABASE:-lost_found}?charset=utf8mb4
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123456}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.deepseek.com}
+      LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://localhost,http://127.0.0.1}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads_data:/app/uploads
+
+  frontend:
+    build: ../frontend
+    container_name: laf-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
 volumes:
   mysql_data:
   redis_data:
   minio_data:
+  uploads_data:

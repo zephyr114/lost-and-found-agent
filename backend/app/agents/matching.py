@@ -188,6 +188,15 @@ def _char_bigram_overlap(a: str, b: str) -> float:
     return len(ga & gb) / min(len(ga), len(gb))
 
 
+def _to_naive_utc(dt: datetime | None) -> datetime | None:
+    """统一转为 UTC 无时区时间，避免 aware / naive 混用报错。"""
+    if dt is None:
+        return None
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
+
 def calculate_match_score(lost: Item, found: Item) -> dict:
     """计算失物与招领的匹配分数（0-100）并生成中文解释。"""
     score = 0.0
@@ -231,8 +240,10 @@ def calculate_match_score(lost: Item, found: Item) -> dict:
         details["brand"] = lost.brand
 
     # 5. 时间差
-    if lost.event_time and found.event_time:
-        days = abs((lost.event_time - found.event_time).total_seconds()) / 86400.0
+    lost_time = _to_naive_utc(lost.event_time)
+    found_time = _to_naive_utc(found.event_time)
+    if lost_time and found_time:
+        days = abs((lost_time - found_time).total_seconds()) / 86400.0
         details["time_diff_days"] = round(days, 1)
         if days <= 3:
             score += 15
