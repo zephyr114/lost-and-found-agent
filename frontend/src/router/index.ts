@@ -87,6 +87,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/matches',
+      name: 'matches',
+      component: () => import('@/views/MatchResultsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/items/:id(\\d+)/matches',
+      name: 'itemMatches',
+      component: () => import('@/views/MatchResultsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/admin/users',
       name: 'adminUsers',
       component: () => import('@/views/AdminUsers.vue'),

@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 5
     max_images_per_item: int = 6
 
+    # 大语言模型（可选：配置 API Key 后 Agent 属性提取调用 LLM；不配置则使用内置规则引擎）
+    llm_api_key: str = ""
+    llm_base_url: str = "https://api.deepseek.com"
+    llm_model: str = "deepseek-chat"
+
     @property
     def cors_origin_list(self) -> list[str]:
         """将逗号分隔的跨域来源转换为列表。"""

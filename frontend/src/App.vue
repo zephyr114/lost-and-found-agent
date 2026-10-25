@@ -78,6 +78,7 @@ function handleCommand(cmd: string) {
           <router-link to="/" class="app-nav__link">首页</router-link>
           <router-link to="/items?type=lost" class="app-nav__link">失物信息</router-link>
           <router-link to="/items?type=found" class="app-nav__link">招领信息</router-link>
+          <router-link v-if="userStore.isLoggedIn" to="/matches" class="app-nav__link">智能匹配</router-link>
         </nav>
         <div class="app-header__right">
           <template v-if="userStore.isLoggedIn">
@@ -128,7 +129,7 @@ function handleCommand(cmd: string) {
       <RouterView />
     </el-main>
     <el-footer class="app-footer">
-      Lost-and-Found Intelligent Platform · 第四阶段：认领和消息功能
+      Lost-and-Found Intelligent Platform · 第五阶段：智能 Agent
     </el-footer>
   </el-container>
 </template>

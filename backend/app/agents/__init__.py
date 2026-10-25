@@ -1,1 +1,4 @@
-"""智能 Agent 包（第五阶段实现）。"""
+"""智能 Agent 包。
+
+matching.py：Lost-and-Found Matching Agent（第五阶段）。
+"""

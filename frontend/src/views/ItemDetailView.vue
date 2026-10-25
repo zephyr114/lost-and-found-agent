@@ -94,6 +94,14 @@ onMounted(load)
             >
               申请认领
             </el-button>
+            <el-button
+              v-if="userStore.isLoggedIn && (isOwner || userStore.isAdmin)"
+              type="primary"
+              plain
+              @click="router.push(`/items/${item.id}/matches`)"
+            >
+              🤖 智能匹配
+            </el-button>
             <el-button v-if="canEdit" type="primary" plain @click="router.push(`/items/${item.id}/edit`)">编辑</el-button>
             <el-button v-if="canEdit" type="danger" plain @click="onDelete">删除</el-button>
           </div>
