@@ -1,0 +1,65 @@
+# GitHub Actions CI 工作流（样例）
+
+> 说明：GitHub 限制——用 OAuth App token（如 `gh auth login` 生成的 `gho_` token）
+> 推送 `.github/workflows/` 目录需要额外的 `workflow` 权限。
+> 如果你的 token 缺这个权限，请先执行下面命令刷新权限，再把本文件
+> 复制为 `.github/workflows/ci.yml` 并推送即可启用 CI：
+
+```bash
+gh auth refresh -s workflow
+mkdir -p .github/workflows
+cp docs/ci-workflow.yml.sample .github/workflows/ci.yml
+git add .github/workflows/ci.yml && git commit -m "ci: 启用 GitHub Actions" && git push
+```
+
+以下为工作流内容（`name: CI` 之后）：
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: 后端测试
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+      - name: 运行测试
+        run: pytest
+
+  frontend:
+    name: 前端构建
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+      - name: 类型检查 + 构建
+        run: pnpm run build
+```

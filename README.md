@@ -1,8 +1,17 @@
 # 失物招领智能平台（Lost-and-Found Intelligent Platform）
 
+<!-- 徽章：CI 状态徽章请在你发布到 GitHub 后，把下面注释中的 USER/REPO 替换为你的仓库名 -->
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+<!-- [![CI](https://github.com/USER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/USER/REPO/actions) -->
+
 支持失物发布、招领发布、智能匹配、消息沟通和管理员审核的失物招领网站。
 
-**当前进度**：✅ 全部七个阶段完成（项目初始化 / 用户系统 / 失物招领 / 认领消息 / 智能 Agent / 管理后台 / 测试部署）
+**当前进度**：✅ 全部七个阶段完成 + 🖼️ 图片识别（主色/亮度检测 + 可选视觉大模型）
 
 ## 功能总览
 
@@ -12,6 +21,7 @@
 | 失物招领 | 发布失物/招领、审核流、关键词/类别/地点/时间筛选、距离排序、详情、编辑、删除、图片上传（≤6 张、≤5MB/张） |
 | 认领消息 | 认领申请（特征说明+证明图片）、同意/拒绝/要求补充证明、自动拒绝其余申请、站内私信、系统通知、未读角标 |
 | 智能 Agent | 属性提取（规则引擎+可选 LLM）、相似搜索、多维打分（类别/名称/颜色/品牌/时间/距离/特征）、中文匹配理由、自动通知、风险词转人工审核、工具级执行日志 |
+| 图片识别 | 物品图片主色 / 亮度检测（本地 Pillow，零依赖）、自动补充物品颜色；配置视觉大模型后识别类别 / 颜色 / 品牌 / 描述 |
 | 管理后台 | ECharts 数据统计、信息审核、用户管理、认领总览、举报处理、系统公告、Agent 日志、操作审计日志 |
 | 安全 | bcrypt 密码哈希、JWT（环境变量密钥）、三级权限依赖、前端路由守卫、上传校验、敏感配置不入库 |
 
@@ -75,7 +85,7 @@ cd backend
 
 ```bash
 cd backend
-.venv\Scripts\python -m pytest     # 58 个用例：健康检查/认证/权限/物品/认领/消息/Agent/管理后台
+.venv\Scripts\python -m pytest     # 64 个用例：健康检查/认证/权限/物品/认领/消息/Agent/管理后台/图片识别
 ```
 
 覆盖：注册重名 409、错误密码 401、无凭证 401、越权 403、待审核隐藏、图片类型校验、认领全流程状态机、自动拒绝并发申请、消息已读、匹配打分与阈值、举报处理、公告 CRUD、操作与 Agent 日志等。
@@ -126,7 +136,7 @@ lost-and-found-agent/
 
 ## 文档
 
-- [需求文档](docs/requirements.md) · [架构文档](docs/architecture.md) · [API 文档](docs/api.md) · [部署文档](docs/deployment.md)
+- [需求文档](docs/requirements.md) · [架构文档](docs/architecture.md) · [API 文档](docs/api.md) · [部署文档](docs/deployment.md) · [GitHub 发布与在线部署指南](docs/github-and-deploy.md)
 
 ## 阶段计划
 

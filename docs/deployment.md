@@ -1,5 +1,7 @@
 # 部署文档
 
+> 想要发布到 GitHub 并在线部署？另见 [GitHub 发布与在线部署指南](github-and-deploy.md)。
+
 ## 方式一：本地开发（Windows / macOS / Linux）
 
 ### 环境要求
