@@ -1,13 +1,13 @@
 # 失物招领智能平台（Lost-and-Found Intelligent Platform）
 
-<!-- 徽章：CI 状态徽章请在你发布到 GitHub 后，把下面注释中的 USER/REPO 替换为你的仓库名 -->
+<!-- 徽章：CI 状态徽章在启用 GitHub Actions 后取消下面这行注释即可 -->
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-<!-- [![CI](https://github.com/USER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/USER/REPO/actions) -->
+<!-- [![CI](https://github.com/zephyr114/lost-and-found-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/zephyr114/lost-and-found-agent/actions) -->
 
 支持失物发布、招领发布、智能匹配、消息沟通和管理员审核的失物招领网站。
 
