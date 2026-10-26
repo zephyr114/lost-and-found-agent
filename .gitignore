@@ -31,3 +31,5 @@ logs/
 backend/uploads/
 
 pip-unpack-*/
+
+pytest-of-*/

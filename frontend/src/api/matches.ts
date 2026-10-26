@@ -26,3 +26,8 @@ export async function getRecommendations(itemId: number): Promise<MatchListRespo
   const { data } = await http.get<MatchListResponse>('/api/matches/recommendations', { params: { item_id: itemId } })
   return data
 }
+
+export async function confirmMatch(matchId: number): Promise<MatchInfo> {
+  const { data } = await http.post<MatchInfo>(`/api/matches/${matchId}/confirm`)
+  return data
+}

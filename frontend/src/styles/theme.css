@@ -1,0 +1,231 @@
+/* =========================================================
+   杭州电子科技大学 · 智能失物招领
+   深色科技风主题：杭电蓝 #005BAC + 电光青 #00E5FF
+   ========================================================= */
+
+:root {
+  --hdu-blue: #005bac;
+  --hdu-blue-light: #1a7fd4;
+  --hdu-cyan: #00e5ff;
+  --hdu-cyan-dim: rgba(0, 229, 255, 0.35);
+  --bg-deep: #050a14;
+  --bg-deep-2: #081226;
+  --glass-bg: rgba(255, 255, 255, 0.045);
+  --glass-bg-strong: rgba(8, 18, 38, 0.72);
+  --glass-border: rgba(0, 229, 255, 0.16);
+  --glass-border-strong: rgba(0, 229, 255, 0.45);
+  --text-main: #e8f3ff;
+  --text-sub: #8fb3d9;
+  --glow-cyan: 0 0 20px rgba(0, 229, 255, 0.35);
+  --glow-blue: 0 0 24px rgba(0, 91, 172, 0.45);
+  --radius-lg: 18px;
+  --radius-md: 14px;
+}
+
+html.dark {
+  color-scheme: dark;
+
+  /* ------ Element Plus 暗色变量覆盖 ------ */
+  --el-color-primary: #00b8ff;
+  --el-color-primary-light-3: #33c6ff;
+  --el-color-primary-light-5: #66d4ff;
+  --el-color-primary-light-7: #99e2ff;
+  --el-color-primary-light-8: #b3e9ff;
+  --el-color-primary-light-9: #08243a;
+  --el-color-primary-dark-2: #0092cc;
+  --el-color-success: #3ddc97;
+  --el-color-warning: #ffb020;
+  --el-color-danger: #ff5d73;
+  --el-color-info: #7f93b3;
+
+  --el-bg-color: rgba(10, 20, 38, 0.9);
+  --el-bg-color-page: #050a14;
+  --el-bg-color-overlay: #0b1626;
+  --el-fill-color-blank: rgba(10, 20, 38, 0.85);
+  --el-fill-color: rgba(255, 255, 255, 0.04);
+  --el-fill-color-light: rgba(255, 255, 255, 0.06);
+  --el-fill-color-lighter: rgba(255, 255, 255, 0.03);
+
+  --el-text-color-primary: #e8f3ff;
+  --el-text-color-regular: #b9d4f0;
+  --el-text-color-secondary: #8fb3d9;
+  --el-text-color-placeholder: #5f7a9c;
+
+  --el-border-color: rgba(0, 229, 255, 0.18);
+  --el-border-color-light: rgba(0, 229, 255, 0.1);
+  --el-border-color-lighter: rgba(0, 229, 255, 0.07);
+  --el-border-color-extra-light: rgba(0, 229, 255, 0.05);
+
+  --el-mask-color: rgba(2, 6, 16, 0.78);
+  --el-box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* ------ 基础布局 ------ */
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--text-main);
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 800px at 12% -10%, rgba(0, 91, 172, 0.4), transparent 60%),
+    radial-gradient(1000px 700px at 92% 8%, rgba(0, 229, 255, 0.12), transparent 55%),
+    radial-gradient(800px 600px at 50% 110%, rgba(0, 91, 172, 0.18), transparent 60%),
+    var(--bg-deep);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ------ 玻璃拟态 ------ */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+
+.glass:hover {
+  border-color: var(--glass-border-strong);
+  box-shadow:
+    0 0 26px rgba(0, 229, 255, 0.22),
+    0 10px 34px rgba(0, 0, 0, 0.45);
+}
+
+/* 发光文字 */
+.glow-text {
+  background: linear-gradient(92deg, #ffffff 0%, #9fe8ff 45%, #00e5ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 24px rgba(0, 229, 255, 0.25);
+}
+
+/* 渐变流光按钮 */
+.glow-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.glow-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: shimmer 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(120%); }
+}
+
+/* HDU 装饰水印 */
+.hdu-watermark {
+  position: fixed;
+  right: -2vw;
+  bottom: 4vh;
+  font-size: clamp(120px, 18vw, 260px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: rgba(0, 229, 255, 0.04);
+  text-shadow: 0 0 60px rgba(0, 229, 255, 0.05);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* 页面切换过渡 */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* Element Plus 玻璃化 */
+html.dark .el-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+html.dark .el-card__header {
+  border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+  color: var(--text-main);
+}
+html.dark .el-dialog,
+html.dark .el-message-box {
+  background: rgba(8, 18, 38, 0.96);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px);
+}
+html.dark .el-table {
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: rgba(0, 91, 172, 0.22);
+  --el-table-border-color: rgba(0, 229, 255, 0.12);
+  --el-table-row-hover-bg-color: rgba(0, 229, 255, 0.08);
+}
+html.dark .el-input__wrapper,
+html.dark .el-textarea__inner,
+html.dark .el-select__wrapper {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.16) inset;
+}
+html.dark .el-input__wrapper.is-focus,
+html.dark .el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.6) inset, 0 0 14px rgba(0, 229, 255, 0.2);
+}
+html.dark .el-dropdown-menu,
+html.dark .el-select-dropdown {
+  background: #0b1626;
+  border: 1px solid var(--glass-border);
+}
+html.dark .el-pagination {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-button-bg-color: rgba(255, 255, 255, 0.05);
+}
+
+/* 滚动条 */
+html.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.22);
+  border-radius: 6px;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.4);
+}
+
+/* 响应式工具 */
+@media (max-width: 640px) {
+  .hide-sm {
+    display: none !important;
+  }
+}

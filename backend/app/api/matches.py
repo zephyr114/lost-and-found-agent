@@ -10,7 +10,7 @@ from app.models.item import Item
 from app.models.match import Match
 from app.models.user import User
 from app.schemas.match import AnalyzeRequest, MatchListResponse, MatchOut
-from app.services import item_service
+from app.services import item_service, message_service
 
 router = APIRouter(prefix="/matches", tags=["智能匹配"])
 
@@ -101,4 +101,34 @@ def get_match(
     if not involved:
         if not (lost and found and lost.audit_status == "approved" and found.audit_status == "approved"):
             raise HTTPException(status_code=404, detail="匹配记录不存在")
+    return _single_match_dict(db, m)
+
+
+@router.post("/{match_id}/confirm", response_model=MatchOut, summary="确认匹配（失主标记「这是我的物品」）")
+def confirm_match(
+    match_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """仅失物发布者可以确认匹配；确认后通知招领发布者尽快联系。"""
+    m = db.get(Match, match_id)
+    if m is None:
+        raise HTTPException(status_code=404, detail="匹配记录不存在")
+    lost = db.get(Item, m.lost_item_id)
+    found = db.get(Item, m.found_item_id)
+    if lost is None or found is None:
+        raise HTTPException(status_code=404, detail="匹配关联的物品不存在")
+    if lost.user_id != user.id and user.role != "admin":
+        raise HTTPException(status_code=403, detail="只有失主可以确认匹配")
+
+    if m.status != "confirmed":
+        m.status = "confirmed"
+        db.commit()
+        message_service.create_message(
+            db,
+            found.user_id,
+            f"失主已确认「{lost.title}」与您发布的「{found.title}」匹配成功（匹配度 {m.match_score}），请及时联系失主完成交接。",
+            message_type="match",
+        )
+        db.refresh(m)
     return _single_match_dict(db, m)

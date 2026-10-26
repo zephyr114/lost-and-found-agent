@@ -29,6 +29,19 @@ const form = reactive({
   description: '',
 })
 
+// 杭电校园常见地点（可选择，也可手动输入）
+const campusLocations = [
+  '图书馆',
+  '第一教学楼',
+  '第二教学楼',
+  '学生活动中心',
+  '体育馆',
+  '宿舍区',
+  '食堂',
+  '校门口',
+  '其他',
+]
+
 const fileList = ref<UploadUserFile[]>([])
 const maxImages = 6
 
@@ -143,7 +156,16 @@ onMounted(async () => {
           </el-col>
           <el-col :xs="24" :sm="12">
             <el-form-item :label="itemType === 'lost' ? '丢失地点 *' : '拾获地点 *'">
-              <el-input v-model="form.location" maxlength="100" placeholder="如：图书馆三楼" />
+              <el-select
+                v-model="form.location"
+                filterable
+                allow-create
+                default-first-option
+                placeholder="选择或输入校园地点"
+                style="width: 100%"
+              >
+                <el-option v-for="loc in campusLocations" :key="loc" :label="loc" :value="loc" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="12">

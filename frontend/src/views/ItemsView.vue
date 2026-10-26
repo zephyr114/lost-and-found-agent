@@ -83,7 +83,23 @@ onMounted(async () => {
     </el-card>
 
     <div v-loading="loading" class="items-page__grid">
-      <el-empty v-if="!loading && items.length === 0" description="暂无数据（新发布的信息需审核通过后展示）" />
+      <el-row v-if="loading" :gutter="16">
+        <el-col v-for="i in 8" :key="i" :xs="24" :sm="12" :md="8" :lg="6">
+          <div class="skeleton-card glass">
+            <el-skeleton animated>
+              <template #template>
+                <el-skeleton-item variant="image" style="width: 100%; height: 150px; border-radius: 10px" />
+                <div style="padding: 14px 4px 6px">
+                  <el-skeleton-item variant="h3" style="width: 55%" />
+                  <el-skeleton-item variant="text" style="width: 90%; margin-top: 12px" />
+                  <el-skeleton-item variant="text" style="width: 70%" />
+                </div>
+              </template>
+            </el-skeleton>
+          </div>
+        </el-col>
+      </el-row>
+      <el-empty v-else-if="items.length === 0" description="暂无数据（新发布的信息需审核通过后展示）" />
       <el-row v-else :gutter="16">
         <el-col v-for="item in items" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
           <ItemCard :item="item" />
@@ -129,6 +145,10 @@ onMounted(async () => {
 }
 .items-page__grid {
   min-height: 200px;
+}
+.skeleton-card {
+  margin-bottom: 16px;
+  padding: 12px;
 }
 .items-page__pager {
   display: flex;

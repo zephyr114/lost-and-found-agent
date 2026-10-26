@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 
 import { getItems } from '@/api/items'
 import type { Item } from '@/api/items'
-import { analyzeItem, getRecommendations } from '@/api/matches'
+import { analyzeItem, confirmMatch, getRecommendations } from '@/api/matches'
 import type { MatchInfo } from '@/api/matches'
 
 const route = useRoute()
@@ -79,6 +79,22 @@ function openItem(id: number) {
   router.push(`/items/${id}`)
 }
 
+const confirmingId = ref<number | null>(null)
+
+async function onConfirm(m: MatchInfo) {
+  confirmingId.value = m.id
+  try {
+    const updated = await confirmMatch(m.id)
+    m.status = updated.status
+    ElMessage.success('已确认！已通知拾获者，请尽快联系完成交接')
+  } catch (e: unknown) {
+    const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail || '确认失败')
+  } finally {
+    confirmingId.value = null
+  }
+}
+
 onMounted(loadItems)
 </script>
 
@@ -133,6 +149,25 @@ onMounted(loadItems)
             <el-tag v-for="(reason, idx) in m.match_reason" :key="idx" size="small" type="info" effect="plain" class="match-card__reason">
               {{ reason }}
             </el-tag>
+          </div>
+          <div
+            v-if="selectedItem && selectedItem.item_type === 'lost' && m.lost_item_id === selectedItem.id"
+            class="match-card__confirm"
+          >
+            <el-tag v-if="m.status === 'confirmed'" type="success" effect="dark" size="small">
+              ✅ 已确认是我的物品
+            </el-tag>
+            <el-button
+              v-else-if="m.id > 0"
+              type="success"
+              size="small"
+              class="glow-btn"
+              :loading="confirmingId === m.id"
+              @click="onConfirm(m)"
+            >
+              确认这是我的物品
+            </el-button>
+            <span v-else class="match-card__hint">运行「立即分析」保存匹配记录后可确认</span>
           </div>
         </div>
       </div>
@@ -200,5 +235,16 @@ onMounted(loadItems)
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+.match-card__confirm {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+.match-card__hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 </style>
