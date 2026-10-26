@@ -14,7 +14,12 @@ from app.core.config import settings
 
 
 def _resolve_database_url(url: str) -> str:
-    """将相对路径的 SQLite 地址锚定到 backend 目录，避免受启动目录影响。"""
+    """规范化连接串：相对 SQLite 锚定到 backend 目录；PostgreSQL 驱动补全。"""
+    # Render 等平台注入的连接串为 postgres://，补全为 psycopg3 驱动
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif url.startswith("postgresql://") and "+" not in url.split("://")[0]:
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
     if url.startswith("sqlite:///./"):
         backend_dir = Path(__file__).resolve().parent.parent.parent
         db_path = backend_dir / url.removeprefix("sqlite:///./")

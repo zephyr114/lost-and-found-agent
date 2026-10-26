@@ -58,7 +58,19 @@ pnpm dev                        # 或 npm run dev
 
 浏览器打开 http://localhost:5173 （开发代理已配置，无跨域问题）
 
-### 一键部署（Docker Compose）
+### 一键部署到云端（推荐，永久在线）
+
+**Render（免费 PostgreSQL + 两个服务，点一下即可）：**
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/zephyr114/lost-and-found-agent)
+
+点击后登录 Render → 确认 Blueprint 配置（`render.yaml` 会自动创建数据库/后端/前端）→ Apply，几分钟后即可在 `https://frontend.onrender.com` 访问。
+
+> **自定义域名**：部署完成后在 Render 控制台 → 前端服务 → Settings → Custom Domain 添加你购买的域名（需在域名注册商处把 CNAME 指向 Render 提供的地址）。免费子域名 `*.onrender.com` 可先直接使用。
+
+**Railway（支持 MySQL）**：见 [docs/github-and-deploy.md](docs/github-and-deploy.md)。
+
+### 一键部署（Docker Compose，自建服务器）
 
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
