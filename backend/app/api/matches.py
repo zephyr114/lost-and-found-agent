@@ -23,17 +23,23 @@ def _check_item_visible(item: Item, viewer: User | None) -> None:
 
 
 def _single_match_dict(db: Session, m: Match) -> dict:
-    items = dict(db.query(Item.id, Item.title).filter(Item.id.in_([m.lost_item_id, m.found_item_id])).all())
+    items = {it.id: it for it in db.query(Item).filter(Item.id.in_([m.lost_item_id, m.found_item_id])).all()}
+    lost = items.get(m.lost_item_id)
+    found = items.get(m.found_item_id)
+    dims = None
+    if lost is not None and found is not None:
+        dims = matching.calculate_match_score(lost, found)["dimensions"]
     return {
         "id": m.id,
         "lost_item_id": m.lost_item_id,
         "found_item_id": m.found_item_id,
         "match_score": m.match_score,
         "match_reason": m.match_reason or [],
+        "dimensions": dims,
         "status": m.status,
         "created_at": m.created_at,
-        "lost_title": items.get(m.lost_item_id),
-        "found_title": items.get(m.found_item_id),
+        "lost_title": lost.title if lost else None,
+        "found_title": found.title if found else None,
     }
 
 
@@ -77,6 +83,7 @@ def recommendations(
                 "found_item_id": cand.id if item.item_type == "lost" else item.id,
                 "match_score": res["score"],
                 "match_reason": res["reasons"],
+                "dimensions": res.get("dimensions"),
                 "status": "live",
                 "created_at": item.created_at,
                 "lost_title": titles.get(item.id if item.item_type == "lost" else cand.id),

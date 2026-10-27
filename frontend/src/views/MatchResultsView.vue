@@ -2,11 +2,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { ElCollapseTransition } from 'element-plus'
 
 import { getItems } from '@/api/items'
 import type { Item } from '@/api/items'
 import { analyzeItem, confirmMatch, getRecommendations } from '@/api/matches'
 import type { MatchInfo } from '@/api/matches'
+import MatchRadar from '@/components/MatchRadar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,8 +18,20 @@ const selectedId = ref<number | null>(null)
 const matches = ref<MatchInfo[]>([])
 const loading = ref(false)
 const analyzing = ref(false)
+const expanded = ref<string[]>([])
 
 const selectedItem = computed(() => myItems.value.find((i) => i.id === selectedId.value) || null)
+
+function matchKey(m: MatchInfo): string {
+  return `${m.id || 0}-${m.lost_item_id}-${m.found_item_id}`
+}
+
+function toggleDims(m: MatchInfo) {
+  const key = matchKey(m)
+  expanded.value = expanded.value.includes(key)
+    ? expanded.value.filter((k) => k !== key)
+    : [...expanded.value, key]
+}
 
 function scoreColor(score: number): string {
   if (score >= 80) return '#67c23a'
@@ -52,6 +66,7 @@ async function loadMatches() {
   try {
     const res = await getRecommendations(selectedId.value)
     matches.value = res.items
+    expanded.value = matches.value.slice(0, 1).map(matchKey)
   } catch (e: unknown) {
     const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
     ElMessage.error(detail || '加载匹配结果失败')
@@ -66,6 +81,7 @@ async function onAnalyze() {
   try {
     const res = await analyzeItem(selectedId.value)
     matches.value = res.items
+    expanded.value = matches.value.slice(0, 1).map(matchKey)
     ElMessage.success(res.total > 0 ? `分析完成，发现 ${res.total} 条匹配` : '分析完成，暂无高匹配度信息')
   } catch (e: unknown) {
     const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
@@ -149,6 +165,14 @@ onMounted(loadItems)
             <el-tag v-for="(reason, idx) in m.match_reason" :key="idx" size="small" type="info" effect="plain" class="match-card__reason">
               {{ reason }}
             </el-tag>
+          </div>
+          <div v-if="m.dimensions" class="match-card__dims">
+            <el-button size="small" text @click="toggleDims(m)">
+              {{ expanded.includes(matchKey(m)) ? '收起维度 ▴' : '📊 匹配维度分析 ▾' }}
+            </el-button>
+            <el-collapse-transition>
+              <MatchRadar v-if="expanded.includes(matchKey(m))" :dimensions="m.dimensions" />
+            </el-collapse-transition>
           </div>
           <div
             v-if="selectedItem && selectedItem.item_type === 'lost' && m.lost_item_id === selectedItem.id"
@@ -235,6 +259,9 @@ onMounted(loadItems)
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+.match-card__dims {
+  margin-top: 6px;
 }
 .match-card__confirm {
   margin-top: 12px;

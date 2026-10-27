@@ -2,8 +2,10 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import type { UploadRawFile, UploadUserFile } from 'element-plus'
+import type { UploadFile, UploadRawFile, UploadUserFile } from 'element-plus'
 
+import { analyzeImage, extractAttributes } from '@/api/agent'
+import type { ExtractedAttributes } from '@/api/agent'
 import { createItem, getCategories, getItem, updateItem, uploadImages } from '@/api/items'
 import type { ItemType } from '@/api/items'
 
@@ -44,6 +46,53 @@ const campusLocations = [
 
 const fileList = ref<UploadUserFile[]>([])
 const maxImages = 6
+
+// ---- AI 一键填充 ----
+const aiText = ref('')
+const aiLoading = ref(false)
+const aiResult = ref<ExtractedAttributes | null>(null)
+
+async function onAiFill() {
+  if (aiText.value.trim().length < 2) {
+    ElMessage.warning('请先粘贴一段物品描述')
+    return
+  }
+  aiLoading.value = true
+  try {
+    const attrs = await extractAttributes(aiText.value)
+    aiResult.value = attrs
+    if (attrs.title && !form.title) form.title = attrs.title
+    if (attrs.category) form.category = attrs.category
+    if (attrs.color) form.color = attrs.color
+    if (attrs.brand) form.brand = attrs.brand
+    if (attrs.location) form.location = attrs.location
+    ElMessage.success('已根据描述自动填充表单')
+  } catch (e: unknown) {
+    const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail || '识别失败，请稍后重试')
+  } finally {
+    aiLoading.value = false
+  }
+}
+
+// ---- 图片识别（选图后自动识别颜色） ----
+const analyzing = ref(false)
+const imageTags = ref<{ color?: string; brightness?: number } | null>(null)
+
+async function onFileChange(file: UploadFile) {
+  const raw = file.raw
+  if (!raw) return
+  analyzing.value = true
+  try {
+    const res = await analyzeImage(raw)
+    imageTags.value = { color: res.color ?? undefined, brightness: res.brightness ?? undefined }
+    if (res.color && !form.color) form.color = res.color
+  } catch {
+    imageTags.value = null
+  } finally {
+    analyzing.value = false
+  }
+}
 
 const pageTitle = computed(() => {
   if (isEdit.value) return '编辑信息'
@@ -124,6 +173,33 @@ onMounted(async () => {
 
 <template>
   <div class="form-page" v-loading="loading">
+    <el-card shadow="never" class="ai-card">
+      <template #header>
+        <div class="ai-card__header">
+          <span>🤖 AI 一键填充</span>
+          <span class="ai-card__hint">粘贴一段物品描述，自动识别类别 / 颜色 / 品牌 / 地点</span>
+        </div>
+      </template>
+      <div class="ai-row">
+        <el-input
+          v-model="aiText"
+          type="textarea"
+          :rows="2"
+          maxlength="2000"
+          show-word-limit
+          placeholder="例如：我在图书馆丢了一个黑色苹果手机，外壳有点划痕"
+        />
+        <el-button type="primary" class="glow-btn" :loading="aiLoading" @click="onAiFill">✨ 智能识别并填充</el-button>
+      </div>
+      <div v-if="aiResult" class="ai-tags">
+        <el-tag v-if="aiResult.category" type="success">类别：{{ aiResult.category }}</el-tag>
+        <el-tag v-if="aiResult.color" type="warning">颜色：{{ aiResult.color }}</el-tag>
+        <el-tag v-if="aiResult.brand" type="primary">品牌：{{ aiResult.brand }}</el-tag>
+        <el-tag v-if="aiResult.location" type="info">地点：{{ aiResult.location }}</el-tag>
+        <span class="ai-hint">已自动填入下方表单，可继续修改</span>
+      </div>
+    </el-card>
+
     <el-card shadow="never">
       <template #header>
         <span>{{ pageTitle }}</span>
@@ -202,12 +278,25 @@ onMounted(async () => {
                 :auto-upload="false"
                 accept=".jpg,.jpeg,.png,.webp,.gif"
                 :limit="maxImages"
+                :on-change="onFileChange"
               >
                 <div>
                   <div style="font-size: 24px">＋</div>
                   <div style="font-size: 12px">选择图片</div>
                 </div>
               </el-upload>
+              <div v-if="analyzing || imageTags" class="vision-tags">
+                <template v-if="analyzing">
+                  <el-tag type="info" class="vision-tag">🔍 正在识别图片…</el-tag>
+                </template>
+                <template v-else-if="imageTags">
+                  <el-tag v-if="imageTags.color" type="success" class="vision-tag">识别颜色：{{ imageTags.color }}</el-tag>
+                  <el-tag v-if="imageTags.brightness !== undefined" type="info" class="vision-tag">
+                    亮度 {{ imageTags.brightness }}
+                  </el-tag>
+                  <span class="ai-hint">（颜色已自动补充）</span>
+                </template>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -232,5 +321,63 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+.ai-card {
+  margin-bottom: 16px;
+}
+.ai-card__header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ai-card__hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.ai-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+.ai-row :deep(.el-textarea) {
+  flex: 1;
+}
+.ai-tags {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.ai-hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.vision-tags {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.vision-tag {
+  animation: tagPop 0.35s ease;
+}
+@keyframes tagPop {
+  from {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (max-width: 560px) {
+  .ai-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 </style>

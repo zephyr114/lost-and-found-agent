@@ -17,6 +17,7 @@ class MatchOut(BaseModel):
     found_item_id: int
     match_score: float
     match_reason: list[str] = []
+    dimensions: dict[str, float] | None = None
     status: str
     created_at: datetime
     lost_title: str | None = None

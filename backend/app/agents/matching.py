@@ -198,48 +198,57 @@ def _to_naive_utc(dt: datetime | None) -> datetime | None:
 
 
 def calculate_match_score(lost: Item, found: Item) -> dict:
-    """计算失物与招领的匹配分数（0-100）并生成中文解释。"""
+    """计算失物与招领的匹配分数（0-100）、中文解释与 7 维得分（雷达图用）。"""
     score = 0.0
     reasons: list[str] = []
     details: dict = {}
+    # 7 个维度得分（0-100），用于前端雷达图
+    dims = {"category": 0.0, "title": 0.0, "color": 0.0, "brand": 0.0, "time": 0.0, "distance": 0.0, "feature": 0.0}
 
-    # 1. 物品类别
+    # 1. 物品类别（满分 30）
     if lost.category and lost.category == found.category:
         score += 30
+        dims["category"] = 100
         reasons.append("物品类别一致")
         details["category"] = lost.category
     else:
         for group in CATEGORY_GROUPS:
             if lost.category in group and found.category in group:
                 score += 10
+                dims["category"] = 33
                 reasons.append("物品类别相近")
                 break
 
-    # 2. 物品名称
+    # 2. 物品名称（满分 15）
     sim = _title_similarity(lost.title, found.title)
     details["title_similarity"] = round(sim, 3)
     if sim >= 0.7:
         score += 15
+        dims["title"] = 100
         reasons.append("物品名称高度相似")
     elif sim >= 0.4:
         score += 10
+        dims["title"] = 67
         reasons.append("物品名称部分相似")
     elif sim >= 0.25:
         score += 5
+        dims["title"] = 33
 
-    # 3. 颜色
+    # 3. 颜色（满分 10）
     if lost.color and found.color and lost.color == found.color:
         score += 10
+        dims["color"] = 100
         reasons.append("颜色描述一致")
         details["color"] = lost.color
 
-    # 4. 品牌
+    # 4. 品牌（满分 10）
     if lost.brand and found.brand and lost.brand == found.brand:
         score += 10
+        dims["brand"] = 100
         reasons.append("品牌一致")
         details["brand"] = lost.brand
 
-    # 5. 时间差
+    # 5. 时间差（满分 15）
     lost_time = _to_naive_utc(lost.event_time)
     found_time = _to_naive_utc(found.event_time)
     if lost_time and found_time:
@@ -247,42 +256,56 @@ def calculate_match_score(lost: Item, found: Item) -> dict:
         details["time_diff_days"] = round(days, 1)
         if days <= 3:
             score += 15
+            dims["time"] = 100
             reasons.append("丢失和拾获时间相近")
         elif days <= 7:
             score += 10
+            dims["time"] = 67
             reasons.append("时间差在一周内")
         elif days <= 30:
             score += 5
+            dims["time"] = 33
             reasons.append("时间差在一个月内")
 
-    # 6. 地点距离
+    # 6. 地点距离（满分 15）
     km = query_location_distance(lost.latitude or 0, lost.longitude or 0, found.latitude or 0, found.longitude or 0) \
         if all(x is not None for x in (lost.latitude, lost.longitude, found.latitude, found.longitude)) else None
     if km is not None:
         details["distance_km"] = round(km, 2)
         if km <= 1:
             score += 15
+            dims["distance"] = 100
             reasons.append("地点距离很近")
         elif km <= 10:
             score += 10
+            dims["distance"] = 67
             reasons.append("地点距离较近")
         elif km <= 50:
             score += 5
+            dims["distance"] = 33
             reasons.append("地点在同一城市范围")
 
-    # 7. 外观特征（描述文本重合）
+    # 7. 外观特征（满分 15）
     overlap = _char_bigram_overlap(lost.description, found.description)
     details["description_overlap"] = round(overlap, 3)
     if overlap >= 0.3:
         score += 15
+        dims["feature"] = 100
         reasons.append("外观特征高度重合")
     elif overlap >= 0.15:
         score += 10
+        dims["feature"] = 67
         reasons.append("外观特征部分重合")
     elif overlap > 0:
         score += 5
+        dims["feature"] = 33
 
-    return {"score": round(min(score, 100.0), 2), "reasons": reasons, "details": details}
+    return {
+        "score": round(min(score, 100.0), 2),
+        "reasons": reasons,
+        "details": details,
+        "dimensions": {k: round(v, 1) for k, v in dims.items()},
+    }
 
 
 # ---------------- 工具 4：search_similar_items ----------------
@@ -469,25 +492,35 @@ def run_matching_pipeline(db: Session, item_id: int, user_id: int | None = None,
 
 
 def serialize_matches(db: Session, matches: list[Match], elapsed_ms: int = 0) -> list[dict]:
-    items: dict[int, str] = {}
     ids = {m.lost_item_id for m in matches} | {m.found_item_id for m in matches}
+    items: dict[int, Item] = {}
     if ids:
-        items = dict(db.query(Item.id, Item.title).filter(Item.id.in_(ids)).all())
-    return [
-        {
-            "id": m.id,
-            "lost_item_id": m.lost_item_id,
-            "found_item_id": m.found_item_id,
-            "match_score": m.match_score,
-            "match_reason": m.match_reason or [],
-            "status": m.status,
-            "created_at": m.created_at,
-            "lost_title": items.get(m.lost_item_id),
-            "found_title": items.get(m.found_item_id),
-            "agent_elapsed_ms": elapsed_ms if i == 0 else 0,
-        }
-        for i, m in enumerate(matches)
-    ]
+        for it in db.query(Item).filter(Item.id.in_(ids)).all():
+            items[it.id] = it
+
+    result: list[dict] = []
+    for i, m in enumerate(matches):
+        lost = items.get(m.lost_item_id)
+        found = items.get(m.found_item_id)
+        dims = None
+        if lost is not None and found is not None:
+            dims = calculate_match_score(lost, found)["dimensions"]
+        result.append(
+            {
+                "id": m.id,
+                "lost_item_id": m.lost_item_id,
+                "found_item_id": m.found_item_id,
+                "match_score": m.match_score,
+                "match_reason": m.match_reason or [],
+                "dimensions": dims,
+                "status": m.status,
+                "created_at": m.created_at,
+                "lost_title": items[m.lost_item_id].title if m.lost_item_id in items else None,
+                "found_title": items[m.found_item_id].title if m.found_item_id in items else None,
+                "agent_elapsed_ms": elapsed_ms if i == 0 else 0,
+            }
+        )
+    return result
 
 
 def background_matching(item_id: int, user_id: int) -> None:

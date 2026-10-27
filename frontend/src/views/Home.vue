@@ -6,9 +6,12 @@ import { getHealth } from '@/api/health'
 import type { HealthInfo } from '@/api/health'
 import { getActiveAnnouncements } from '@/api/announcements'
 import type { Announcement } from '@/api/admin'
+import { getItems } from '@/api/items'
+import type { Item } from '@/api/items'
 import { getOverview } from '@/api/stats'
 import type { Overview } from '@/api/stats'
 import { useUserStore } from '@/stores/user'
+import ItemCard from '@/components/ItemCard.vue'
 import NumberRoll from '@/components/NumberRoll.vue'
 
 type Status = 'loading' | 'ok' | 'degraded' | 'error'
@@ -20,15 +23,18 @@ const status = ref<Status>('loading')
 const health = ref<HealthInfo | null>(null)
 const announcements = ref<Announcement[]>([])
 const overview = ref<Overview | null>(null)
+const latest = ref<Item[]>([])
 
 onMounted(async () => {
-  const [overviewRes, announcementsRes, healthRes] = await Promise.allSettled([
+  const [overviewRes, announcementsRes, healthRes, latestRes] = await Promise.allSettled([
     getOverview(),
     getActiveAnnouncements(),
     getHealth(),
+    getItems({ sort: 'newest', page: 1, size: 4 }),
   ])
   if (overviewRes.status === 'fulfilled') overview.value = overviewRes.value
   if (announcementsRes.status === 'fulfilled') announcements.value = announcementsRes.value
+  if (latestRes.status === 'fulfilled') latest.value = latestRes.value.items
   if (healthRes.status === 'fulfilled') {
     health.value = healthRes.value
     status.value = healthRes.value.status === 'ok' ? 'ok' : 'degraded'
@@ -92,6 +98,17 @@ function open(path: string) {
           <div class="stats-strip__label">{{ s.label }}</div>
         </div>
       </div>
+    </section>
+
+    <section class="latest">
+      <div class="section-title">
+        <span>最新发布</span>
+        <router-link to="/items" class="latest__more">查看全部 →</router-link>
+      </div>
+      <div v-if="latest.length" class="latest__grid">
+        <ItemCard v-for="item in latest" :key="item.id" :item="item" />
+      </div>
+      <el-empty v-else description="还没有已审核的物品，发布第一条吧" />
     </section>
 
     <section class="features">
@@ -279,6 +296,37 @@ function open(path: string) {
   border-radius: 2px;
   background: linear-gradient(180deg, #00e5ff, #005bac);
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+}
+
+/* ---- 最新发布 ---- */
+.latest__more {
+  margin-left: auto;
+  color: #00e5ff;
+  font-size: 13px;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.latest__more:hover {
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+}
+
+.latest__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .latest__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .latest__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ---- 功能卡 ---- */

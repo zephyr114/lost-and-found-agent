@@ -6,6 +6,7 @@ export interface MatchInfo {
   found_item_id: number
   match_score: number
   match_reason: string[]
+  dimensions?: Record<string, number> | null
   status: string
   created_at: string
   lost_title: string | null
