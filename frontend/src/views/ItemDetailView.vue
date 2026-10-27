@@ -112,6 +112,7 @@ onMounted(load)
             <div class="detail-page__tags">
               <el-tag v-if="item.audit_status === 'pending'" type="warning" size="small">待审核（仅自己和管理员可见）</el-tag>
               <el-tag v-if="item.status === 'claimed'" type="info" size="small">已被认领</el-tag>
+              <el-tag v-if="item.status === 'resolved'" type="success" size="small">✅ 已找回</el-tag>
               <el-tag v-if="item.status === 'closed'" type="info" size="small">已关闭</el-tag>
             </div>
           </div>

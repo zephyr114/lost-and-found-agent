@@ -8,6 +8,7 @@ from pathlib import Path
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_lost_found.db"
 os.environ["JWT_SECRET_KEY"] = "test-secret-key-0123456789abcdef0123456789abcdef"
+os.environ["RATE_LIMIT_ENABLED"] = "false"
 
 
 def _safe_unlink(path: Path) -> None:

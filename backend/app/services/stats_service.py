@@ -16,8 +16,10 @@ def get_public_statistics(db: Session) -> dict:
         "items_lost": db.query(Item).filter(approved, Item.item_type == "lost").count(),
         "items_found": db.query(Item).filter(approved, Item.item_type == "found").count(),
         "items_claimed": db.query(Item).filter(approved, Item.status == "claimed").count(),
+        "items_resolved": db.query(Item).filter(Item.status == "resolved").count(),
         "claims_total": db.query(Claim).count(),
         "matches_total": db.query(Match).count(),
         "matches_confirmed": db.query(Match).filter(Match.status == "confirmed").count(),
+        "matches_handed_over": db.query(Match).filter(Match.status == "handed_over").count(),
         "users_total": db.query(User).filter(User.status == "active").count(),
     }

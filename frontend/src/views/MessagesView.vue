@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 
-import { getMessages, markAllRead, markRead, messageTypeText } from '@/api/messages'
+import { getMessages, markAllRead, markRead, messageTypeText, sendMessage } from '@/api/messages'
 import type { Message } from '@/api/messages'
 import { getUnreadCount } from '@/api/messages'
 
@@ -13,6 +13,37 @@ const loading = ref(false)
 const page = ref(1)
 const size = 20
 const unread = ref(0)
+
+// 回复
+const replyDialog = ref(false)
+const replyTarget = ref<Message | null>(null)
+const replyContent = ref('')
+const replying = ref(false)
+
+function openReply(msg: Message) {
+  if (!msg.sender_id) return
+  replyTarget.value = msg
+  replyContent.value = ''
+  replyDialog.value = true
+}
+
+async function submitReply() {
+  if (!replyTarget.value?.sender_id) return
+  if (!replyContent.value.trim()) {
+    ElMessage.warning('请输入回复内容')
+    return
+  }
+  replying.value = true
+  try {
+    await sendMessage(replyTarget.value.sender_id, replyContent.value.trim())
+    replyDialog.value = false
+    ElMessage.success('回复已发送')
+  } catch {
+    ElMessage.error('发送失败')
+  } finally {
+    replying.value = false
+  }
+}
 
 async function load() {
   loading.value = true
@@ -95,6 +126,9 @@ onMounted(async () => {
             <el-badge v-if="!msg.is_read && box === 'inbox'" is-dot />
           </div>
           <div class="message-item__content">{{ msg.content }}</div>
+          <div v-if="box === 'inbox' && msg.sender_id" class="message-item__actions">
+            <el-button size="small" text type="primary" @click.stop="openReply(msg)">回复</el-button>
+          </div>
         </div>
       </div>
 
@@ -108,6 +142,15 @@ onMounted(async () => {
         />
       </div>
     </el-card>
+
+    <el-dialog v-model="replyDialog" title="回复消息" width="420px">
+      <p class="reply-hint">回复给：{{ replyTarget?.sender_name || '用户' }}</p>
+      <el-input v-model="replyContent" type="textarea" :rows="3" maxlength="500" show-word-limit placeholder="输入回复内容" />
+      <template #footer>
+        <el-button @click="replyDialog = false">取消</el-button>
+        <el-button type="primary" :loading="replying" @click="submitReply">发送</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -155,6 +198,16 @@ onMounted(async () => {
 .message-item__content {
   font-size: 14px;
   white-space: pre-wrap;
+}
+.message-item__actions {
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-end;
+}
+.reply-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 .messages-page__pager {
   display: flex;

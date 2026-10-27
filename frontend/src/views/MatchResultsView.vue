@@ -6,7 +6,7 @@ import { ElCollapseTransition } from 'element-plus'
 
 import { getItems } from '@/api/items'
 import type { Item } from '@/api/items'
-import { analyzeItem, confirmMatch, getRecommendations } from '@/api/matches'
+import { analyzeItem, confirmMatch, getHandoverCode, getRecommendations, handoverMatch } from '@/api/matches'
 import type { MatchInfo } from '@/api/matches'
 import MatchRadar from '@/components/MatchRadar.vue'
 
@@ -102,12 +102,57 @@ async function onConfirm(m: MatchInfo) {
   try {
     const updated = await confirmMatch(m.id)
     m.status = updated.status
+    m.handover_code = updated.handover_code
     ElMessage.success('已确认！已通知拾获者，请尽快联系完成交接')
   } catch (e: unknown) {
     const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
     ElMessage.error(detail || '确认失败')
   } finally {
     confirmingId.value = null
+  }
+}
+
+// ---- 交接流程 ----
+const codes = ref<Record<number, string>>({})
+const handoverDialog = ref(false)
+const handoverTarget = ref<MatchInfo | null>(null)
+const handoverInput = ref('')
+const handoverLoading = ref(false)
+
+async function onLoadCode(m: MatchInfo) {
+  try {
+    codes.value[m.id] = await getHandoverCode(m.id)
+    ElMessage.success(`交接码：${codes.value[m.id]}`)
+  } catch (e: unknown) {
+    const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail || '获取交接码失败')
+  }
+}
+
+function openHandover(m: MatchInfo) {
+  handoverTarget.value = m
+  handoverInput.value = codes.value[m.id] || m.handover_code || ''
+  handoverDialog.value = true
+}
+
+async function submitHandover() {
+  if (!handoverTarget.value) return
+  if (!handoverInput.value.trim()) {
+    ElMessage.warning('请输入交接码')
+    return
+  }
+  handoverLoading.value = true
+  try {
+    const updated = await handoverMatch(handoverTarget.value.id, handoverInput.value.trim())
+    handoverTarget.value.status = updated.status
+    handoverTarget.value.handover_code = updated.handover_code
+    handoverDialog.value = false
+    ElMessage.success('交接完成，物品已标记为「已找回」！')
+  } catch (e: unknown) {
+    const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail || '交接确认失败')
+  } finally {
+    handoverLoading.value = false
   }
 }
 
@@ -193,9 +238,28 @@ onMounted(loadItems)
             </el-button>
             <span v-else class="match-card__hint">运行「立即分析」保存匹配记录后可确认</span>
           </div>
+          <div v-if="m.status === 'confirmed' || m.status === 'handed_over'" class="match-card__handover">
+            <span class="match-card__code">
+              交接码：<b>{{ codes[m.id] || m.handover_code || '未获取' }}</b>
+            </span>
+            <el-button v-if="!codes[m.id] && !m.handover_code" size="small" text @click="onLoadCode(m)">
+              获取交接码
+            </el-button>
+            <el-tag v-if="m.status === 'handed_over'" type="success" effect="dark" size="small">✅ 已找回</el-tag>
+            <el-button v-else size="small" type="success" class="glow-btn" @click="openHandover(m)">确认交接</el-button>
+          </div>
         </div>
       </div>
     </el-card>
+
+    <el-dialog v-model="handoverDialog" title="确认交接" width="420px">
+      <p class="handover-hint">请双方当面核对交接码后输入，确认物品已交还失主。确认后双方物品将标记为「已找回」。</p>
+      <el-input v-model="handoverInput" maxlength="10" placeholder="输入 6 位交接码" />
+      <template #footer>
+        <el-button @click="handoverDialog = false">取消</el-button>
+        <el-button type="primary" :loading="handoverLoading" @click="submitHandover">确认完成交接</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -262,6 +326,28 @@ onMounted(loadItems)
 }
 .match-card__dims {
   margin-top: 6px;
+}
+.match-card__handover {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.match-card__code {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+.match-card__code b {
+  color: #00e5ff;
+  font-size: 16px;
+  letter-spacing: 0.14em;
+}
+.handover-hint {
+  margin: 0 0 12px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.7;
 }
 .match-card__confirm {
   margin-top: 12px;

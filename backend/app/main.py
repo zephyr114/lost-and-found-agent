@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api import admin, agent, announcements, auth, claims, health, items, matches, messages, reports, stats, users
 from app.core.config import settings
+from app.core.ratelimit import RateLimitMiddleware
 from app.core.security import hash_password
 from app.database.session import Base, SessionLocal, engine
 from app.models import User
@@ -62,6 +63,14 @@ app = FastAPI(
     description="失物招领智能平台后端服务",
     lifespan=lifespan,
 )
+
+# 限流：按 IP 限制 /api 请求（认证接口更严格）；测试环境可通过 RATE_LIMIT_ENABLED=false 关闭
+if settings.rate_limit_enabled:
+    app.add_middleware(
+        RateLimitMiddleware,
+        auth_limit=settings.rate_limit_auth_per_minute,
+        global_limit=settings.rate_limit_global_per_minute,
+    )
 
 # CORS：通配符时不允许携带凭据，显式来源列表时才允许
 _origins = settings.cors_origin_list

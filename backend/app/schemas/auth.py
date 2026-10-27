@@ -25,5 +25,12 @@ class TokenResponse(BaseModel):
     """登录 / 注册成功响应。"""
 
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+class RefreshRequest(BaseModel):
+    """刷新令牌请求。"""
+
+    refresh_token: str = Field(min_length=10)

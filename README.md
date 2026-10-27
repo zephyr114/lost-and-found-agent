@@ -97,12 +97,27 @@ cd backend
 
 ```bash
 cd backend
-.venv\Scripts\python -m pytest     # 64 个用例：健康检查/认证/权限/物品/认领/消息/Agent/管理后台/图片识别
+.venv\Scripts\python -m pytest     # 82 个用例：健康检查/认证/权限/物品/认领/消息/Agent/管理后台/图片识别/交接流程/刷新令牌/限流
+.venv\Scripts\python scripts\e2e_smoke.py   # API 级端到端冒烟（需先启动后端）
 ```
 
-覆盖：注册重名 409、错误密码 401、无凭证 401、越权 403、待审核隐藏、图片类型校验、认领全流程状态机、自动拒绝并发申请、消息已读、匹配打分与阈值、举报处理、公告 CRUD、操作与 Agent 日志等。
+覆盖：注册重名 409、错误密码 401、无凭证 401、越权 403、待审核隐藏、图片类型校验、认领全流程状态机、自动拒绝并发申请、消息已读、匹配打分与阈值、7 维匹配数据、交接码全流程、已找回故事墙、刷新令牌、限流 429、举报处理、公告 CRUD、操作与 Agent 日志等。
 
 前端：`cd frontend && pnpm run build`（vue-tsc 类型检查 + 生产构建）。
+
+## 数据库迁移（Alembic）
+
+```bash
+cd backend
+.venv\Scripts\python -m alembic upgrade head                                   # 应用迁移
+.venv\Scripts\python -m alembic revision --autogenerate -m "变更说明"           # 模型变更后生成迁移
+```
+
+首次接入已有数据库：`alembic stamp head`（标记为已应用，不重复建表）。开发环境启动时仍会自动 `create_all` 兜底，生产环境建议以迁移为准。
+
+## 交接闭环
+
+失主确认匹配后获得 6 位交接码（由匹配 ID + 服务端密钥派生，不落库），双方当面核对后输入交接码即可完成交接：物品状态变为「已找回」，双方收到通知，并进入首页「已找回故事墙」。
 
 ## 环境变量
 
@@ -123,11 +138,13 @@ lost-and-found-agent/
 │   │   ├── models/         # ORM 模型（users/items/claims/messages/matches/reports/announcements/agent_logs/operation_logs）
 │   │   ├── schemas/        # Pydantic 模型
 │   │   ├── database/       # 引擎与会话
-│   │   ├── core/           # 配置 / 安全
-│   │   ├── utils/          # 地理距离 / 文件上传
+│   │   ├── core/           # 配置 / 安全 / 限流
+│   │   ├── utils/          # 地理距离 / 文件上传 / 交接码
 │   │   └── main.py
+│   ├── migrations/         # Alembic 迁移
 │   ├── scripts/seed_demo.py  # 演示数据
-│   ├── tests/              # 58 个测试用例
+│   ├── scripts/e2e_smoke.py  # API 级端到端冒烟
+│   ├── tests/              # 82 个测试用例
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/               # Vue 3 前端

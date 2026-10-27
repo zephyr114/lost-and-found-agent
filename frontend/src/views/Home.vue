@@ -8,6 +8,8 @@ import { getActiveAnnouncements } from '@/api/announcements'
 import type { Announcement } from '@/api/admin'
 import { getItems } from '@/api/items'
 import type { Item } from '@/api/items'
+import { getStories } from '@/api/matches'
+import type { StoryItem } from '@/api/matches'
 import { getOverview } from '@/api/stats'
 import type { Overview } from '@/api/stats'
 import { useUserStore } from '@/stores/user'
@@ -24,17 +26,20 @@ const health = ref<HealthInfo | null>(null)
 const announcements = ref<Announcement[]>([])
 const overview = ref<Overview | null>(null)
 const latest = ref<Item[]>([])
+const stories = ref<StoryItem[]>([])
 
 onMounted(async () => {
-  const [overviewRes, announcementsRes, healthRes, latestRes] = await Promise.allSettled([
+  const [overviewRes, announcementsRes, healthRes, latestRes, storiesRes] = await Promise.allSettled([
     getOverview(),
     getActiveAnnouncements(),
     getHealth(),
     getItems({ sort: 'newest', page: 1, size: 4 }),
+    getStories(),
   ])
   if (overviewRes.status === 'fulfilled') overview.value = overviewRes.value
   if (announcementsRes.status === 'fulfilled') announcements.value = announcementsRes.value
   if (latestRes.status === 'fulfilled') latest.value = latestRes.value.items
+  if (storiesRes.status === 'fulfilled') stories.value = storiesRes.value.items
   if (healthRes.status === 'fulfilled') {
     health.value = healthRes.value
     status.value = healthRes.value.status === 'ok' ? 'ok' : 'degraded'
@@ -109,6 +114,20 @@ function open(path: string) {
         <ItemCard v-for="item in latest" :key="item.id" :item="item" />
       </div>
       <el-empty v-else description="还没有已审核的物品，发布第一条吧" />
+    </section>
+
+    <section v-if="stories.length" class="stories">
+      <div class="section-title">
+        <span>已找回故事墙</span>
+        <span class="stories__count">🎉 已有 {{ stories.length }} 件物品成功回家</span>
+      </div>
+      <div class="stories__grid">
+        <div v-for="s in stories" :key="s.id" class="story glass">
+          <div class="story__badge">✅ 已找回</div>
+          <div class="story__title">{{ s.title }}</div>
+          <div class="story__meta">{{ s.location }} · {{ new Date(s.resolved_at).toLocaleDateString('zh-CN') }}</div>
+        </div>
+      </div>
     </section>
 
     <section class="features">
@@ -317,14 +336,75 @@ function open(path: string) {
   gap: 16px;
 }
 
+/* ---- 已找回故事墙 ---- */
+.stories__count {
+  margin-left: auto;
+  font-size: 12px;
+  color: #3ddc97;
+  letter-spacing: 0.02em;
+}
+
+.stories__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.story {
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.story::after {
+  content: '';
+  position: absolute;
+  inset: auto -20% -60% auto;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(61, 220, 151, 0.16), transparent 70%);
+}
+
+.story__badge {
+  display: inline-block;
+  font-size: 11px;
+  color: #a9f5d0;
+  background: rgba(61, 220, 151, 0.14);
+  border: 1px solid rgba(61, 220, 151, 0.4);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-bottom: 10px;
+}
+
+.story__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e8f3ff;
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.story__meta {
+  font-size: 12px;
+  color: #8fb3d9;
+}
+
 @media (max-width: 900px) {
   .latest__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stories__grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 560px) {
   .latest__grid {
+    grid-template-columns: 1fr;
+  }
+  .stories__grid {
     grid-template-columns: 1fr;
   }
 }

@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "dev-only-secret-change-me-in-production"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440  # 24 小时
+    refresh_token_expire_days: int = 7
+
+    # 限流（每个 IP 每分钟）
+    rate_limit_enabled: bool = True
+    rate_limit_auth_per_minute: int = 30
+    rate_limit_global_per_minute: int = 300
 
     # 初始管理员账号（首次启动自动创建；生产环境请在 .env 中修改）
     admin_username: str = "admin"

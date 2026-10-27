@@ -45,6 +45,9 @@ function openDetail(id: number) {
       <div v-else-if="item.status === 'claimed'" class="item-card__status">
         <el-tag size="small" type="info">已认领</el-tag>
       </div>
+      <div v-else-if="item.status === 'resolved'" class="item-card__status">
+        <el-tag size="small" type="success">已找回</el-tag>
+      </div>
     </div>
   </div>
 </template>

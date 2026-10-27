@@ -22,7 +22,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(user_id: int, role: str) -> str:
-    """签发 JWT，载荷包含用户 ID、角色和过期时间。"""
+    """签发访问令牌 JWT。"""
     now = datetime.now(timezone.utc)
     payload = {
         "sub": str(user_id),
@@ -34,9 +34,29 @@ def create_access_token(user_id: int, role: str) -> str:
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
+def create_refresh_token(user_id: int) -> str:
+    """签发刷新令牌（有效期更长，仅用于换取新的访问令牌）。"""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(user_id),
+        "type": "refresh",
+        "iat": now,
+        "exp": now + timedelta(days=settings.refresh_token_expire_days),
+    }
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+
+
 def decode_access_token(token: str) -> dict:
-    """校验并解析 JWT，无效或过期时抛出 jwt.PyJWTError。"""
+    """校验并解析访问令牌，无效或过期时抛出 jwt.PyJWTError。"""
     payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
     if payload.get("type") != "access":
+        raise jwt.InvalidTokenError("token 类型错误")
+    return payload
+
+
+def decode_refresh_token(token: str) -> dict:
+    """校验并解析刷新令牌。"""
+    payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+    if payload.get("type") != "refresh":
         raise jwt.InvalidTokenError("token 类型错误")
     return payload
