@@ -100,7 +100,7 @@ def stories(limit: int = Query(default=8, ge=1, le=50), db: Session = Depends(ge
     """返回最近完成交接（已找回）的物品，用于首页故事墙。"""
     rows = (
         db.query(Item)
-        .filter(Item.status == "resolved")
+        .filter(Item.status == "resolved", Item.audit_status == "approved")
         .order_by(Item.updated_at.desc())
         .limit(limit)
         .all()

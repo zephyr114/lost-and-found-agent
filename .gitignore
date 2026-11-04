@@ -33,3 +33,11 @@ backend/uploads/
 pip-unpack-*/
 
 pytest-of-*/
+.neon
+
+# Neon 本地凭据与运行产物
+.env.local
+backend/_tunnel_info.json
+backend/frontend_dist/
+
+.vercel/

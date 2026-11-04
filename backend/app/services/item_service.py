@@ -9,7 +9,9 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.models.claim import Claim
 from app.models.item import Item
+from app.models.match import Match
 from app.models.user import User
 from app.schemas.item import ItemCreate, ItemUpdate
 from app.utils.geo import haversine_km
@@ -179,6 +181,11 @@ def update_item(db: Session, item: Item, data: ItemUpdate) -> Item:
 
 
 def delete_item(db: Session, item: Item) -> None:
+    """删除物品，同时清理关联的匹配与认领记录（避免外键约束错误）。"""
+    db.query(Match).filter(
+        or_(Match.lost_item_id == item.id, Match.found_item_id == item.id)
+    ).delete(synchronize_session=False)
+    db.query(Claim).filter(Claim.item_id == item.id).delete(synchronize_session=False)
     db.delete(item)
     db.commit()
 

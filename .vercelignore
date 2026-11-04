@@ -1,0 +1,12 @@
+_hf_space
+node_modules
+frontend/node_modules
+backend/.venv
+backend/tests
+backend/pytest-of-*
+backend/lost_found.db
+backend/uploads
+docs
+knowledge_base
+*.md
+!README.md

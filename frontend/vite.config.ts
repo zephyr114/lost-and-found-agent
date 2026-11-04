@@ -5,6 +5,18 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import { defineConfig } from 'vite'
 
+// 后端地址可通过环境变量覆盖（默认 8000；端口被占用时可改成 8001）
+const proxyTarget = process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:8000'
+
+const proxy = {
+  '/api': { target: proxyTarget, changeOrigin: true },
+  '/health': { target: proxyTarget, changeOrigin: true },
+  '/uploads': { target: proxyTarget, changeOrigin: true },
+  '/docs': { target: proxyTarget, changeOrigin: true },
+  '/redoc': { target: proxyTarget, changeOrigin: true },
+  '/openapi.json': { target: proxyTarget, changeOrigin: true },
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -19,7 +31,8 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 5173,
+    // 端口可通过环境变量覆盖（默认 5173；端口被占用时可改成 5174）
+    port: Number(process.env.PORT) || 5173,
     // 允许通过临时隧道域名（trycloudflare / lhr.life 等）访问
     allowedHosts: true,
     // Windows 下文件监视易触发 EBUSY 崩溃，改用轮询模式
@@ -28,13 +41,6 @@ export default defineConfig({
       interval: 1000,
     },
     // 开发环境代理到后端，避免跨域
-    proxy: {
-      '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-      '/health': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-      '/uploads': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-      '/docs': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-      '/redoc': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-      '/openapi.json': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-    },
+    proxy,
   },
 })

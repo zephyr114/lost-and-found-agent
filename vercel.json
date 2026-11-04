@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "true",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "backend/**",
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index" },
+    { "src": "/health", "dest": "/api/index" },
+    { "src": "/docs", "dest": "/api/index" },
+    { "src": "/redoc", "dest": "/api/index" },
+    { "src": "/openapi.json", "dest": "/api/index" },
+    { "src": "/uploads/(.*)", "dest": "/api/index" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
