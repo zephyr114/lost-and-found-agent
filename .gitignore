@@ -41,3 +41,13 @@ backend/_tunnel_info.json
 backend/frontend_dist/
 
 .vercel/
+
+# 桌面端 / 移动端构建产物
+desktop/node_modules/
+desktop/release/
+mobile/node_modules/
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/local.properties
+mobile/android/.idea/

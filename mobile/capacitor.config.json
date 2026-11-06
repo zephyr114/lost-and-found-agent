@@ -1,0 +1,13 @@
+{
+  "appId": "cn.edu.hdu.lostfound",
+  "appName": "杭电失物招领",
+  "webDir": "www",
+  "server": {
+    "url": "https://hdulosttrack.eu.cc",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

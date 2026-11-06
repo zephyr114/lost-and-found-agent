@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">杭电失物招领</string>
+    <string name="title_activity_main">杭电失物招领</string>
+    <string name="package_name">cn.edu.hdu.lostfound</string>
+    <string name="custom_url_scheme">cn.edu.hdu.lostfound</string>
+</resources>

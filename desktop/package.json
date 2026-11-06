@@ -1,0 +1,42 @@
+{
+  "name": "hdu-lost-found-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "杭州电子科技大学 智能失物招领 桌面端",
+  "main": "main.js",
+  "author": "HDU Team",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "cn.edu.hdu.lostfound",
+    "productName": "杭电失物招领",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "build/icon.png",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.png",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "HDU-LostFound-${version}.exe"
+    }
+  }
+}

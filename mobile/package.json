@@ -1,0 +1,16 @@
+{
+  "name": "hdu-lost-found-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "杭州电子科技大学 智能失物招领 手机端",
+  "scripts": {
+    "sync": "cap sync"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}
