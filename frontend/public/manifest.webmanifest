@@ -1,0 +1,22 @@
+{
+  "name": "杭州电子科技大学 · 智能失物招领",
+  "short_name": "失物招领",
+  "description": "杭电智能失物招领平台：发布失物/招领、AI 智能匹配、交接闭环",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050a14",
+  "theme_color": "#050a14",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "发布失物", "url": "/publish/lost", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "发布招领", "url": "/publish/found", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "数据看板", "url": "/stats", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

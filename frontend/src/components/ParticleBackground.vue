@@ -86,8 +86,8 @@ function resize() {
   const canvas = canvasRef.value
   if (!canvas) return
   const dpr = Math.min(window.devicePixelRatio || 1, 2)
-  width = window.innerWidth
-  height = window.innerHeight
+  width = Math.max(window.innerWidth, document.documentElement.clientWidth || 0)
+  height = Math.max(window.innerHeight, document.documentElement.clientHeight || 0)
   canvas.width = Math.floor(width * dpr)
   canvas.height = Math.floor(height * dpr)
   canvas.style.width = `${width}px`
@@ -126,13 +126,19 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <canvas ref="canvasRef" class="particle-bg" aria-hidden="true" />
+  <Teleport to="body">
+    <canvas ref="canvasRef" class="particle-bg" aria-hidden="true" />
+  </Teleport>
 </template>
 
 <style scoped>
 .particle-bg {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
   z-index: 0;
   pointer-events: none;
 }

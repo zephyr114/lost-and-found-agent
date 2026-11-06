@@ -19,3 +19,12 @@ app.use(router)
 app.use(ElLoading)
 
 app.mount('#app')
+
+// PWA：生产环境注册 Service Worker（开发环境不注册，避免缓存干扰热更新）
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* 注册失败不影响正常使用 */
+    })
+  })
+}
