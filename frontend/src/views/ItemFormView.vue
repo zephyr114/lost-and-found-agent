@@ -121,6 +121,16 @@ const chatOptions = ref<string[]>([])
 const chatBox = ref<HTMLElement | null>(null)
 const chatDraft = ref<Partial<DialogDraft>>({})
 
+function clearChat() {
+  chatMessages.value = []
+  chatInput.value = ''
+  chatDone.value = false
+  chatProgress.value = 0
+  chatOptions.value = []
+  chatDraft.value = {}
+  ElMessage.success('对话已清空，可以重新描述')
+}
+
 function scrollChat() {
   nextTick(() => {
     if (chatBox.value) chatBox.value.scrollTop = chatBox.value.scrollHeight
@@ -349,11 +359,18 @@ onMounted(async () => {
         <div class="ai-card__header">
           <span>💬 对话式发布</span>
           <span class="ai-card__hint">像聊天一样描述失物，AI 会自动追问缺的信息</span>
+          <el-button
+            class="chat-clear"
+            size="small"
+            text
+            :disabled="!chatMessages.length && !chatInput"
+            @click="clearChat"
+          >🧹 清空对话</el-button>
         </div>
       </template>
       <div ref="chatBox" class="chat-box">
         <div v-if="!chatMessages.length" class="chat-empty">
-          试试说：「我在图书馆丢了一个黑色耳机」
+          试试说：「我在正心楼丢了一个黑色耳机」
         </div>
         <div v-for="(m, i) in chatMessages" :key="i" :class="['chat-msg', m.role]">
           <div class="chat-bubble">{{ m.text }}</div>
@@ -608,6 +625,9 @@ onMounted(async () => {
 }
 
 /* ---- 对话式发布 ---- */
+.chat-clear {
+  margin-left: auto;
+}
 .chat-card {
   background: rgba(0, 229, 255, 0.03);
 }
