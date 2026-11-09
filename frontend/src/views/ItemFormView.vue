@@ -4,8 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { UploadFile, UploadRawFile, UploadUserFile } from 'element-plus'
 
-import { analyzeImage, dialogStep, extractAttributes } from '@/api/agent'
-import type { DialogDraft, ExtractedAttributes } from '@/api/agent'
+import { analyzeImage, dialogStep, extractAttributes, precheckItem } from '@/api/agent'
+import type { DialogDraft, ExtractedAttributes, PrecheckResult } from '@/api/agent'
 import { createItem, getCategories, getItem, updateItem, uploadImages } from '@/api/items'
 import type { ItemType } from '@/api/items'
 
@@ -224,7 +224,79 @@ async function onSubmit() {
   }
 }
 
+// ---- 语音输入（Web Speech API） ----
+const voiceSupported = ref(false)
+const listening = ref(false)
+let recognition: any = null
+
+function setupVoice() {
+  const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+  if (!SR) return
+  voiceSupported.value = true
+  recognition = new SR()
+  recognition.lang = 'zh-CN'
+  recognition.interimResults = false
+  recognition.maxAlternatives = 1
+  recognition.onresult = (event: any) => {
+    const text = event.results?.[0]?.[0]?.transcript || ''
+    if (text) {
+      chatInput.value = text
+      sendChat(text)
+    }
+  }
+  recognition.onend = () => {
+    listening.value = false
+  }
+  recognition.onerror = () => {
+    listening.value = false
+  }
+}
+
+function toggleVoice() {
+  if (!recognition) return
+  if (listening.value) {
+    recognition.stop()
+    listening.value = false
+    return
+  }
+  try {
+    recognition.start()
+    listening.value = true
+  } catch {
+    listening.value = false
+  }
+}
+
+// ---- 发布前 AI 预审 ----
+const precheck = ref<PrecheckResult | null>(null)
+const prechecking = ref(false)
+const precheckLabel = computed(() => {
+  if (precheck.value?.level === 'high') return '高风险'
+  if (precheck.value?.level === 'medium') return '中风险'
+  return '低风险'
+})
+
+async function onPrecheck() {
+  if (!form.title.trim()) {
+    ElMessage.warning('请先填写物品名称')
+    return
+  }
+  prechecking.value = true
+  try {
+    precheck.value = await precheckItem({
+      title: form.title,
+      description: form.description,
+      location: form.location,
+    })
+  } catch {
+    ElMessage.error('预审失败，请稍后重试')
+  } finally {
+    prechecking.value = false
+  }
+}
+
 onMounted(async () => {
+  setupVoice()
   categories.value = await getCategories()
   await load()
 })
@@ -293,6 +365,13 @@ onMounted(async () => {
           :disabled="chatDone"
           @keyup.enter="sendChat()"
         />
+        <el-button
+          v-if="voiceSupported"
+          :type="listening ? 'danger' : 'default'"
+          :class="{ 'voice-listening': listening }"
+          :disabled="chatDone"
+          @click="toggleVoice"
+        >{{ listening ? '⏹ 停止' : '🎤 语音' }}</el-button>
         <el-button
           type="primary"
           class="glow-btn"
@@ -409,8 +488,20 @@ onMounted(async () => {
           </el-col>
         </el-row>
 
+        <div v-if="precheck" class="precheck-box">
+          <el-tag
+            :type="precheck.level === 'high' ? 'danger' : precheck.level === 'medium' ? 'warning' : 'success'"
+            effect="dark"
+          >🤖 AI 预审：{{ precheckLabel }}</el-tag>
+          <div class="precheck-reasons">
+            <div v-for="(r, i) in precheck.reasons" :key="i">· {{ r }}</div>
+          </div>
+          <div class="ai-hint">{{ precheck.suggestion }}</div>
+        </div>
+
         <div class="form-page__actions">
           <el-button @click="router.back()">取消</el-button>
+          <el-button :loading="prechecking" @click="onPrecheck">🤖 AI 预审</el-button>
           <el-button type="primary" :loading="submitting" @click="onSubmit">
             {{ isEdit ? '保存修改' : '发布（提交后进入审核）' }}
           </el-button>
@@ -482,6 +573,20 @@ onMounted(async () => {
     transform: scale(1);
   }
 }
+.precheck-box {
+  margin: 14px 0 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px dashed rgba(0, 229, 255, 0.3);
+  background: rgba(0, 229, 255, 0.04);
+}
+.precheck-reasons {
+  margin: 8px 0 4px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+}
+
 @media (max-width: 560px) {
   .ai-row {
     flex-direction: column;
@@ -542,6 +647,18 @@ onMounted(async () => {
 .chat-option:hover {
   transform: translateY(-1px);
   border-color: var(--el-color-primary);
+}
+.voice-listening {
+  animation: voicePulse 1s ease-in-out infinite;
+}
+@keyframes voicePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 77, 79, 0);
+  }
 }
 .chat-input {
   display: flex;

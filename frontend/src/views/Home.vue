@@ -125,6 +125,7 @@ function open(path: string) {
         <div v-for="s in stories" :key="s.id" class="story glass">
           <div class="story__badge">✅ 已找回</div>
           <div class="story__title">{{ s.title }}</div>
+          <div v-if="s.story" class="story__story">{{ s.story }}</div>
           <div class="story__meta">{{ s.location }} · {{ new Date(s.resolved_at).toLocaleDateString('zh-CN') }}</div>
         </div>
       </div>
@@ -386,6 +387,13 @@ function open(path: string) {
   white-space: nowrap;
 }
 
+.story__story {
+  margin: 6px 0 4px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #b9d4f0;
+}
+
 .story__meta {
   font-size: 12px;
   color: #8fb3d9;
@@ -638,3 +646,4 @@ function open(path: string) {
   }
 }
 </style>
+

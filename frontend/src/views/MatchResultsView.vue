@@ -211,6 +211,13 @@ onMounted(loadItems)
               {{ reason }}
             </el-tag>
           </div>
+          <div v-if="m.suggestions && m.suggestions.length" class="match-card__suggestions">
+            <div class="match-card__suggestions-title">💡 提升匹配度</div>
+            <div v-for="s in m.suggestions" :key="s.field" class="match-card__suggestion">
+              <span class="match-card__suggestion-text">{{ s.suggestion }}</span>
+              <el-tag size="small" type="success" effect="plain">+{{ s.gain }} 分</el-tag>
+            </div>
+          </div>
           <div v-if="m.dimensions" class="match-card__dims">
             <el-button size="small" text @click="toggleDims(m)">
               {{ expanded.includes(matchKey(m)) ? '收起维度 ▴' : '📊 匹配维度分析 ▾' }}
@@ -323,6 +330,30 @@ onMounted(loadItems)
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+.match-card__suggestions {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px dashed rgba(0, 229, 255, 0.28);
+}
+.match-card__suggestions-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #00e5ff;
+  margin-bottom: 6px;
+}
+.match-card__suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+}
+.match-card__suggestion-text {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
 }
 .match-card__dims {
   margin-top: 6px;

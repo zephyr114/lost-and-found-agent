@@ -28,8 +28,10 @@ def _single_match_dict(db: Session, m: Match, include_code: bool = False) -> dic
     lost = items.get(m.lost_item_id)
     found = items.get(m.found_item_id)
     dims = None
+    suggestions: list[dict] = []
     if lost is not None and found is not None:
         dims = matching.calculate_match_score(lost, found)["dimensions"]
+        suggestions = matching.counterfactual_suggestions(lost, found)
     return {
         "id": m.id,
         "lost_item_id": m.lost_item_id,
@@ -37,6 +39,7 @@ def _single_match_dict(db: Session, m: Match, include_code: bool = False) -> dic
         "match_score": m.match_score,
         "match_reason": m.match_reason or [],
         "dimensions": dims,
+        "suggestions": suggestions,
         "handover_code": generate_handover_code(m.id) if include_code else None,
         "status": m.status,
         "created_at": m.created_at,
@@ -86,6 +89,11 @@ def recommendations(
                 "match_score": res["score"],
                 "match_reason": res["reasons"],
                 "dimensions": res.get("dimensions"),
+                "suggestions": (
+                    matching.counterfactual_suggestions(item, cand)
+                    if item.item_type == "lost"
+                    else matching.counterfactual_suggestions(cand, item)
+                ),
                 "status": "live",
                 "created_at": item.created_at,
                 "lost_title": titles.get(item.id if item.item_type == "lost" else cand.id),
@@ -93,6 +101,20 @@ def recommendations(
             }
         )
     return {"items": result, "total": len(result)}
+
+
+def _build_story(item: Item) -> str:
+    """生成一句「物品回家」的故事文案（规则模板，后续可接 LLM 改写）。"""
+    days = 0
+    if item.event_time and item.updated_at:
+        try:
+            days = max((item.updated_at - item.event_time).days, 0)
+        except TypeError:
+            days = 0
+    verb = "被捡到" if item.item_type == "found" else "丢失"
+    if days >= 1:
+        return f"「{item.title}」在{item.location}{verb}，{days} 天后回到了主人手中。"
+    return f"「{item.title}」在{item.location}{verb}，当天就回到了主人手中。"
 
 
 @router.get("/stories", summary="已找回故事墙（公开）")
@@ -114,6 +136,7 @@ def stories(limit: int = Query(default=8, ge=1, le=50), db: Session = Depends(ge
                 "category": it.category,
                 "location": it.location,
                 "resolved_at": it.updated_at,
+                "story": _build_story(it),
             }
             for it in rows
         ],

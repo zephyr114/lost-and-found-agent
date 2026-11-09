@@ -1,5 +1,14 @@
 import http from './http'
 
+export interface MatchSuggestion {
+  field: string
+  label: string
+  current: string
+  suggestion: string
+  gain: number
+  score_after: number
+}
+
 export interface MatchInfo {
   id: number
   lost_item_id: number
@@ -7,6 +16,7 @@ export interface MatchInfo {
   match_score: number
   match_reason: string[]
   dimensions?: Record<string, number> | null
+  suggestions?: MatchSuggestion[]
   handover_code?: string | null
   status: string
   created_at: string
@@ -21,6 +31,7 @@ export interface StoryItem {
   category: string
   location: string
   resolved_at: string
+  story?: string
 }
 
 export interface MatchListResponse {

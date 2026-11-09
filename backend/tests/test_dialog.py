@@ -89,3 +89,56 @@ def test_analyze_image_returns_tags(client):
     assert data["orientation"] == "横向"
     assert "深色系" in data["tags"]
     assert data["top_colors"]
+
+
+def test_counterfactual_suggestions_improve_score():
+    from datetime import datetime
+
+    from app.agents.matching import counterfactual_suggestions
+    from app.models.item import Item
+
+    lost = Item(
+        title="黑色耳机", category="电子数码", color="", brand="", location="图书馆",
+        latitude=31.2304, longitude=121.4737, event_time=datetime(2026, 11, 1, 10, 0),
+        description="", item_type="lost",
+    )
+    found = Item(
+        title="捡到黑色耳机", category="电子数码", color="黑色", brand="索尼", location="食堂",
+        latitude=31.2280, longitude=121.4740, event_time=datetime(2026, 11, 3, 15, 0),
+        description="耳机盒有卡通贴纸", item_type="found",
+    )
+    suggestions = counterfactual_suggestions(lost, found)
+    assert suggestions
+    assert all(s["gain"] > 0 for s in suggestions)
+    assert any(s["field"] == "brand" for s in suggestions)
+    assert suggestions[0]["gain"] >= suggestions[-1]["gain"]
+
+
+def test_precheck_flags_contact_and_short_desc(client):
+    token = register(client)
+    r = client.post(
+        "/api/agent/precheck",
+        json={"title": "转让校园卡", "description": "加微信 abc12345 私聊", "location": "食堂"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["level"] in ("medium", "high")
+    assert data["reasons"]
+    assert data["suggestion"]
+
+
+def test_story_generated_for_resolved_item():
+    from datetime import datetime
+
+    from app.api.matches import _build_story
+    from app.models.item import Item
+
+    item = Item(
+        title="银色保温杯", item_type="found", location="图书馆", status="resolved",
+        audit_status="approved", event_time=datetime(2026, 11, 1, 10, 0),
+        updated_at=datetime(2026, 11, 3, 10, 0),
+    )
+    story = _build_story(item)
+    assert "银色保温杯" in story
+    assert "图书馆" in story

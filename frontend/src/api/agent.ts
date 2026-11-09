@@ -43,6 +43,13 @@ export interface DialogResult {
   progress: number
 }
 
+export interface PrecheckResult {
+  level: 'low' | 'medium' | 'high'
+  score: number
+  reasons: string[]
+  suggestion: string
+}
+
 export async function extractAttributes(text: string): Promise<ExtractedAttributes> {
   const { data } = await http.post<ExtractedAttributes>('/api/agent/extract', { text })
   return data
@@ -54,6 +61,15 @@ export async function dialogStep(payload: {
   item_type: 'lost' | 'found'
 }): Promise<DialogResult> {
   const { data } = await http.post<DialogResult>('/api/agent/dialog', payload)
+  return data
+}
+
+export async function precheckItem(payload: {
+  title: string
+  description?: string
+  location?: string
+}): Promise<PrecheckResult> {
+  const { data } = await http.post<PrecheckResult>('/api/agent/precheck', payload)
   return data
 }
 

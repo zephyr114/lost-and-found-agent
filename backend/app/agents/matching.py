@@ -308,6 +308,80 @@ def calculate_match_score(lost: Item, found: Item) -> dict:
     }
 
 
+# ---------------- 反事实建议：补什么信息能提高匹配度 ----------------
+
+def _item_clone(item: Item, **changes) -> Item:
+    """复制一个 Item 实例（仅用于打分，不写库）。"""
+    data = {col.name: getattr(item, col.name) for col in item.__table__.columns}
+    data.update(changes)
+    return Item(**data)
+
+
+def counterfactual_suggestions(lost: Item, found: Item, limit: int = 3) -> list[dict]:
+    """对比「当前信息」与「补齐后」的分数，给出可操作的提升建议。"""
+    base_score = calculate_match_score(lost, found)["score"]
+    trials: list[dict] = []
+
+    def try_change(field: str, label: str, current: str, suggestion: str, **changes) -> None:
+        try:
+            clone = _item_clone(lost, **changes)
+            new_score = calculate_match_score(clone, found)["score"]
+        except Exception:
+            return
+        gain = round(new_score - base_score, 1)
+        if gain > 0:
+            trials.append({
+                "field": field,
+                "label": label,
+                "current": current,
+                "suggestion": suggestion,
+                "gain": gain,
+                "score_after": new_score,
+            })
+
+    if not lost.brand and found.brand:
+        try_change("brand", "品牌", "未填写", f"补充品牌「{found.brand}」", brand=found.brand)
+    if not lost.color and found.color:
+        try_change("color", "颜色", "未填写", f"补充颜色「{found.color}」", color=found.color)
+
+    lt = _to_naive_utc(lost.event_time)
+    ft = _to_naive_utc(found.event_time)
+    if lt and ft:
+        days = abs((lt - ft).total_seconds()) / 86400.0
+        if days > 3:
+            try_change(
+                "event_time", "时间", f"相差约 {days:.0f} 天",
+                f"核对时间：拾获时间为 {ft:%m-%d %H:%M}",
+                event_time=found.event_time,
+            )
+
+    if all(x is not None for x in (lost.latitude, lost.longitude, found.latitude, found.longitude)):
+        km = query_location_distance(lost.latitude, lost.longitude, found.latitude, found.longitude)
+        if km and km > 1:
+            try_change(
+                "location", "地点", f"相距约 {km:.1f} km",
+                f"确认是否在「{found.location}」附近丢失",
+                latitude=found.latitude, longitude=found.longitude, location=found.location,
+            )
+
+    if found.description and _char_bigram_overlap(lost.description, found.description) < 0.15:
+        try_change(
+            "description", "外观描述", "信息较少",
+            f"补充外观细节：{found.description[:28]}",
+            description=found.description,
+        )
+
+    if found.title and _title_similarity(lost.title, found.title) < 0.4:
+        try_change(
+            "title", "名称", lost.title or "未填写",
+            f"补充关键特征（参考：{found.title[:20]}）",
+            title=found.title,
+        )
+
+    trials.sort(key=lambda t: -t["gain"])
+    return trials[:limit]
+
+
 # ---------------- 工具 4：search_similar_items ----------------
 
 def search_similar_items(db: Session, item: Item, limit: int = 10) -> list[tuple[Item, dict]]:
@@ -503,8 +577,10 @@ def serialize_matches(db: Session, matches: list[Match], elapsed_ms: int = 0) ->
         lost = items.get(m.lost_item_id)
         found = items.get(m.found_item_id)
         dims = None
+        suggestions: list[dict] = []
         if lost is not None and found is not None:
             dims = calculate_match_score(lost, found)["dimensions"]
+            suggestions = counterfactual_suggestions(lost, found)
         result.append(
             {
                 "id": m.id,
@@ -513,6 +589,7 @@ def serialize_matches(db: Session, matches: list[Match], elapsed_ms: int = 0) ->
                 "match_score": m.match_score,
                 "match_reason": m.match_reason or [],
                 "dimensions": dims,
+                "suggestions": suggestions,
                 "status": m.status,
                 "created_at": m.created_at,
                 "lost_title": items[m.lost_item_id].title if m.lost_item_id in items else None,
