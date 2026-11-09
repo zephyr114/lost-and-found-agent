@@ -1,4 +1,4 @@
-"""对话式发布与图像标签测试。"""
+﻿"""对话式发布与图像标签测试。"""
 
 import io
 import uuid
@@ -33,8 +33,8 @@ def test_dialog_step_fills_slots():
     assert r1["options"]
 
     # 第二轮：补充地点
-    r2 = dialog.dialog_step("在图书馆丢的", r1["draft"], "lost")
-    assert r2["draft"]["location"] == "图书馆"
+    r2 = dialog.dialog_step("在正心楼丢的", r1["draft"], "lost")
+    assert r2["draft"]["location"] == "正心楼"
     assert r2["next_field"] == "event_time"
 
     # 第三轮：补齐时间
@@ -47,8 +47,8 @@ def test_dialog_step_fills_slots():
 def test_dialog_location_alias():
     from app.agents import dialog
 
-    r = dialog.dialog_step("我在一教丢的校园卡，昨天", {}, "lost")
-    assert r["draft"]["location"] == "第一教学楼"
+    r = dialog.dialog_step("我在食堂丢的校园卡，昨天", {}, "lost")
+    assert r["draft"]["location"] == "绍味堂"
     assert r["draft"]["category"] == "证件卡类"
     assert r["done"] is True
 
@@ -62,14 +62,14 @@ def test_dialog_endpoint(client):
     token = register(client)
     r = client.post(
         "/api/agent/dialog",
-        json={"text": "我在食堂丢了一个银色保温杯，昨天中午", "draft": {}, "item_type": "lost"},
+        json={"text": "我在正心楼丢了一个银色保温杯，昨天中午", "draft": {}, "item_type": "lost"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200
     data = r.json()
     assert data["draft"]["category"] == "雨伞水杯"
     assert data["draft"]["color"] == "银色"
-    assert data["draft"]["location"] == "食堂"
+    assert data["draft"]["location"] == "正心楼"
     assert data["done"] is True
     assert data["progress"] == 100
 
@@ -142,3 +142,4 @@ def test_story_generated_for_resolved_item():
     story = _build_story(item)
     assert "银色保温杯" in story
     assert "图书馆" in story
+
