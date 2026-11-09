@@ -1,0 +1,59 @@
+{
+  "pairs": 100,
+  "distractors_per_query": 10,
+  "recall_at_1": 0.99,
+  "recall_at_3": 1.0,
+  "recall_at_5": 1.0,
+  "mrr": 0.995,
+  "not_recalled": 0,
+  "avg_true_score": 99.2,
+  "min_true_score": 95.0,
+  "avg_negative_score": 70.4,
+  "threshold_sweep": [
+    {
+      "threshold": 10,
+      "true_pass_rate": 1.0,
+      "false_pos_per_query": 10.0
+    },
+    {
+      "threshold": 20,
+      "true_pass_rate": 1.0,
+      "false_pos_per_query": 10.0
+    },
+    {
+      "threshold": 30,
+      "true_pass_rate": 1.0,
+      "false_pos_per_query": 9.58
+    },
+    {
+      "threshold": 40,
+      "true_pass_rate": 1.0,
+      "false_pos_per_query": 8.9
+    },
+    {
+      "threshold": 50,
+      "true_pass_rate": 1.0,
+      "false_pos_per_query": 8.26
+    },
+    {
+      "threshold": 60,
+      "true_pass_rate": 1.0,
+      "false_pos_per_query": 7.19
+    },
+    {
+      "threshold": 70,
+      "true_pass_rate": 1.0,
+      "false_pos_per_query": 5.95
+    },
+    {
+      "threshold": 80,
+      "true_pass_rate": 1.0,
+      "false_pos_per_query": 5.24
+    },
+    {
+      "threshold": 90,
+      "true_pass_rate": 1.0,
+      "false_pos_per_query": 2.83
+    }
+  ]
+}

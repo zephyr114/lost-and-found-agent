@@ -50,20 +50,84 @@ def _nearest_color(rgb: tuple[int, int, int]) -> str:
 
 
 def analyze_image_local(path: str | Path) -> dict:
-    """本地图像分析：主色、亮度、平均 RGB。"""
+    """本地图像分析：主色、亮度、构图与可读标签（无需外部服务）。"""
     from PIL import Image
 
     img = Image.open(path).convert("RGB")
+    orig_w, orig_h = img.size
     img.thumbnail((64, 64))
     pixels = list(img.getdata())
     if not pixels:
-        return {"color": None, "brightness": None, "dominant_rgb": None}
+        return {
+            "color": None,
+            "brightness": None,
+            "dominant_rgb": None,
+            "top_colors": [],
+            "orientation": None,
+            "aspect_ratio": None,
+            "tags": [],
+        }
 
     count = len(pixels)
     avg = tuple(round(sum(p[i] for p in pixels) / count) for i in range(3))
     color = _nearest_color(avg)
     brightness = round((0.299 * avg[0] + 0.587 * avg[1] + 0.114 * avg[2]) / 255, 2)
-    return {"color": color, "brightness": brightness, "dominant_rgb": list(avg)}
+
+    # 主色聚类：按 48 级量化，取占比最高的前 3 组
+    buckets: dict[tuple[int, int, int], list[tuple[int, int, int]]] = {}
+    for p in pixels:
+        key = (p[0] // 48, p[1] // 48, p[2] // 48)
+        buckets.setdefault(key, []).append(p)
+    top_groups = sorted(buckets.values(), key=len, reverse=True)[:3]
+    top_colors = []
+    for group in top_groups:
+        gavg = tuple(round(sum(c[i] for c in group) / len(group)) for i in range(3))
+        top_colors.append({
+            "name": _nearest_color(gavg),
+            "ratio": round(len(group) / count, 2),
+        })
+
+    # 构图
+    ratio = round(orig_w / orig_h, 2) if orig_h else None
+    if ratio is None:
+        orientation = None
+    elif ratio > 1.1:
+        orientation = "横向"
+    elif ratio < 0.9:
+        orientation = "纵向"
+    else:
+        orientation = "方形"
+
+    # 可读标签（用于前端展示的「识别结果」）
+    tags: list[str] = []
+    if brightness < 0.3:
+        tags.append("深色系")
+    elif brightness > 0.7:
+        tags.append("浅色系")
+    else:
+        tags.append("中间调")
+    r, g, b = avg
+    if r > b + 20:
+        tags.append("暖色调")
+    elif b > r + 20:
+        tags.append("冷色调")
+    if color != "其他":
+        tags.append(color)
+    if orientation:
+        tags.append(f"{orientation}构图")
+    for item in top_colors[1:]:
+        if item["name"] not in tags and item["name"] != "其他" and item["ratio"] >= 0.15:
+            tags.append(f"{item['name']}点缀")
+
+    return {
+        "color": color,
+        "brightness": brightness,
+        "dominant_rgb": list(avg),
+        "top_colors": top_colors,
+        "orientation": orientation,
+        "aspect_ratio": ratio,
+        "tags": tags,
+    }
 
 
 def analyze_image_with_llm(image_bytes: bytes, content_type: str) -> dict | None:

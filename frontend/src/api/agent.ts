@@ -13,14 +13,47 @@ export interface ImageAnalysis {
   color: string | null
   brightness: number | null
   dominant_rgb: number[] | null
+  top_colors?: { name: string; ratio: number }[]
+  orientation?: string | null
+  aspect_ratio?: number | null
+  tags?: string[]
   source?: string
   category?: string
   brand?: string
   description?: string
 }
 
+export interface DialogDraft {
+  title: string
+  category: string
+  color: string
+  brand: string
+  location: string
+  event_time: string
+  description: string
+}
+
+export interface DialogResult {
+  reply: string
+  draft: DialogDraft
+  missing: string[]
+  next_field: string | null
+  options: string[]
+  done: boolean
+  progress: number
+}
+
 export async function extractAttributes(text: string): Promise<ExtractedAttributes> {
   const { data } = await http.post<ExtractedAttributes>('/api/agent/extract', { text })
+  return data
+}
+
+export async function dialogStep(payload: {
+  text: string
+  draft: Partial<DialogDraft>
+  item_type: 'lost' | 'found'
+}): Promise<DialogResult> {
+  const { data } = await http.post<DialogResult>('/api/agent/dialog', payload)
   return data
 }
 

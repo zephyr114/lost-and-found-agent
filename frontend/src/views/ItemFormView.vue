@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { UploadFile, UploadRawFile, UploadUserFile } from 'element-plus'
 
-import { analyzeImage, extractAttributes } from '@/api/agent'
-import type { ExtractedAttributes } from '@/api/agent'
+import { analyzeImage, dialogStep, extractAttributes } from '@/api/agent'
+import type { DialogDraft, ExtractedAttributes } from '@/api/agent'
 import { createItem, getCategories, getItem, updateItem, uploadImages } from '@/api/items'
 import type { ItemType } from '@/api/items'
 
@@ -77,7 +77,7 @@ async function onAiFill() {
 
 // ---- 图片识别（选图后自动识别颜色） ----
 const analyzing = ref(false)
-const imageTags = ref<{ color?: string; brightness?: number } | null>(null)
+const imageTags = ref<{ color?: string; brightness?: number; tags?: string[] } | null>(null)
 
 async function onFileChange(file: UploadFile) {
   const raw = file.raw
@@ -85,12 +85,71 @@ async function onFileChange(file: UploadFile) {
   analyzing.value = true
   try {
     const res = await analyzeImage(raw)
-    imageTags.value = { color: res.color ?? undefined, brightness: res.brightness ?? undefined }
+    imageTags.value = {
+      color: res.color ?? undefined,
+      brightness: res.brightness ?? undefined,
+      tags: res.tags ?? [],
+    }
     if (res.color && !form.color) form.color = res.color
   } catch {
     imageTags.value = null
   } finally {
     analyzing.value = false
+  }
+}
+
+// ---- 对话式发布（多轮追问） ----
+const chatMessages = ref<{ role: 'user' | 'bot'; text: string }[]>([])
+const chatInput = ref('')
+const chatLoading = ref(false)
+const chatDone = ref(false)
+const chatProgress = ref(0)
+const chatOptions = ref<string[]>([])
+const chatBox = ref<HTMLElement | null>(null)
+const chatDraft = ref<Partial<DialogDraft>>({})
+
+function scrollChat() {
+  nextTick(() => {
+    if (chatBox.value) chatBox.value.scrollTop = chatBox.value.scrollHeight
+  })
+}
+
+function applyDraft(draft: Partial<DialogDraft>) {
+  if (draft.title) form.title = draft.title
+  if (draft.category) form.category = draft.category
+  if (draft.color) form.color = draft.color
+  if (draft.brand) form.brand = draft.brand
+  if (draft.location) form.location = draft.location
+  if (draft.event_time) form.event_time = draft.event_time
+  if (draft.description && !form.description) form.description = draft.description
+}
+
+async function sendChat(text?: string) {
+  const content = (text ?? chatInput.value).trim()
+  if (!content || chatLoading.value) return
+  chatMessages.value.push({ role: 'user', text: content })
+  chatInput.value = ''
+  scrollChat()
+  chatLoading.value = true
+  try {
+    const res = await dialogStep({
+      text: content,
+      draft: chatDraft.value,
+      item_type: itemType.value,
+    })
+    chatDraft.value = res.draft
+    chatMessages.value.push({ role: 'bot', text: res.reply })
+    chatOptions.value = res.done ? [] : res.options
+    chatDone.value = res.done
+    chatProgress.value = res.progress
+    applyDraft(res.draft)
+    scrollChat()
+  } catch (e: unknown) {
+    const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    chatMessages.value.push({ role: 'bot', text: detail || '抱歉，我这边出了点问题，请再试一次。' })
+    scrollChat()
+  } finally {
+    chatLoading.value = false
   }
 }
 
@@ -200,6 +259,55 @@ onMounted(async () => {
       </div>
     </el-card>
 
+    <el-card shadow="never" class="ai-card chat-card">
+      <template #header>
+        <div class="ai-card__header">
+          <span>💬 对话式发布</span>
+          <span class="ai-card__hint">像聊天一样描述失物，AI 会自动追问缺的信息</span>
+        </div>
+      </template>
+      <div ref="chatBox" class="chat-box">
+        <div v-if="!chatMessages.length" class="chat-empty">
+          试试说：「我在图书馆丢了一个黑色耳机」
+        </div>
+        <div v-for="(m, i) in chatMessages" :key="i" :class="['chat-msg', m.role]">
+          <div class="chat-bubble">{{ m.text }}</div>
+        </div>
+        <div v-if="chatLoading" class="chat-msg bot">
+          <div class="chat-bubble chat-typing">正在思考…</div>
+        </div>
+      </div>
+      <div v-if="chatOptions.length && !chatDone" class="chat-options">
+        <el-tag
+          v-for="opt in chatOptions"
+          :key="opt"
+          class="chat-option"
+          effect="plain"
+          @click="sendChat(opt)"
+        >{{ opt }}</el-tag>
+      </div>
+      <div class="chat-input">
+        <el-input
+          v-model="chatInput"
+          placeholder="例如：我在图书馆丢了一个黑色耳机"
+          :disabled="chatDone"
+          @keyup.enter="sendChat()"
+        />
+        <el-button
+          type="primary"
+          class="glow-btn"
+          :loading="chatLoading"
+          :disabled="chatDone"
+          @click="sendChat()"
+        >发送</el-button>
+      </div>
+      <div class="chat-progress">
+        <el-progress :percentage="chatProgress" :stroke-width="6" :show-text="false" />
+        <span v-if="chatDone" class="ai-hint">✅ 信息齐全，可直接发布</span>
+        <span v-else class="ai-hint">已填写 {{ chatProgress }}%</span>
+      </div>
+    </el-card>
+
     <el-card shadow="never">
       <template #header>
         <span>{{ pageTitle }}</span>
@@ -290,11 +398,11 @@ onMounted(async () => {
                   <el-tag type="info" class="vision-tag">🔍 正在识别图片…</el-tag>
                 </template>
                 <template v-else-if="imageTags">
-                  <el-tag v-if="imageTags.color" type="success" class="vision-tag">识别颜色：{{ imageTags.color }}</el-tag>
-                  <el-tag v-if="imageTags.brightness !== undefined" type="info" class="vision-tag">
-                    亮度 {{ imageTags.brightness }}
+                  <el-tag v-for="t in imageTags.tags" :key="t" type="success" class="vision-tag">🔍 {{ t }}</el-tag>
+                  <el-tag v-if="!imageTags.tags?.length && imageTags.color" type="success" class="vision-tag">
+                    识别颜色：{{ imageTags.color }}
                   </el-tag>
-                  <span class="ai-hint">（颜色已自动补充）</span>
+                  <span class="ai-hint">（识别结果已自动补充，可手动修改）</span>
                 </template>
               </div>
             </el-form-item>
@@ -376,6 +484,83 @@ onMounted(async () => {
 }
 @media (max-width: 560px) {
   .ai-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ---- 对话式发布 ---- */
+.chat-card {
+  background: rgba(0, 229, 255, 0.03);
+}
+.chat-box {
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px 8px;
+}
+.chat-empty {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  padding: 10px 2px;
+}
+.chat-msg {
+  display: flex;
+}
+.chat-msg.user {
+  justify-content: flex-end;
+}
+.chat-bubble {
+  max-width: 78%;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  color: var(--el-text-color-primary);
+}
+.chat-msg.user .chat-bubble {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.22), rgba(0, 136, 255, 0.18));
+  border-color: rgba(0, 229, 255, 0.35);
+}
+.chat-typing {
+  opacity: 0.7;
+}
+.chat-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+.chat-option {
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.chat-option:hover {
+  transform: translateY(-1px);
+  border-color: var(--el-color-primary);
+}
+.chat-input {
+  display: flex;
+  gap: 10px;
+}
+.chat-input :deep(.el-input) {
+  flex: 1;
+}
+.chat-progress {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chat-progress :deep(.el-progress) {
+  flex: 1;
+}
+@media (max-width: 560px) {
+  .chat-input {
     flex-direction: column;
     align-items: stretch;
   }
