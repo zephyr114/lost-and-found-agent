@@ -10,3 +10,7 @@ docs
 knowledge_base
 *.md
 !README.md
+
+# 桌面端与移动端工程（独立打包，不参与 Web 部署）
+desktop/
+mobile/
