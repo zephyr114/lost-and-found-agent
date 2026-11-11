@@ -250,9 +250,26 @@ async function onSubmit() {
 // ---- 语音输入（Web Speech API） ----
 const voiceSupported = ref(false)
 const listening = ref(false)
+const isIOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 let recognition: any = null
 
+function voiceErrorMessage(code: string): string {
+  const map: Record<string, string> = {
+    'not-allowed': '麦克风权限被拒绝，请在浏览器设置中允许本站使用麦克风',
+    'service-not-allowed': '当前浏览器不允许使用语音识别服务，请换 Chrome 或 Edge',
+    'no-speech': '没有听到声音，请再说一次',
+    'audio-capture': '没有检测到麦克风，请检查设备',
+    network: '语音识别服务连接失败，请检查网络后重试',
+    'language-not-supported': '当前浏览器不支持中文语音识别',
+  }
+  return map[code] || ''
+}
+
 function setupVoice() {
+  // iOS 上 Safari / Chrome（WebKit）均不支持 Web Speech 识别
+  if (isIOS) return
   const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
   if (!SR) return
   voiceSupported.value = true
@@ -260,6 +277,9 @@ function setupVoice() {
   recognition.lang = 'zh-CN'
   recognition.interimResults = false
   recognition.maxAlternatives = 1
+  recognition.onstart = () => {
+    listening.value = true
+  }
   recognition.onresult = (event: any) => {
     const text = event.results?.[0]?.[0]?.transcript || ''
     if (text) {
@@ -270,8 +290,10 @@ function setupVoice() {
   recognition.onend = () => {
     listening.value = false
   }
-  recognition.onerror = () => {
+  recognition.onerror = (event: any) => {
     listening.value = false
+    const msg = voiceErrorMessage(event?.error || '')
+    if (msg) ElMessage.warning(msg)
   }
 }
 
@@ -284,9 +306,9 @@ function toggleVoice() {
   }
   try {
     recognition.start()
-    listening.value = true
-  } catch {
+  } catch (e: any) {
     listening.value = false
+    ElMessage.warning(e?.message || '语音启动失败，请检查麦克风权限')
   }
 }
 
@@ -402,6 +424,9 @@ onMounted(async () => {
           :disabled="chatDone"
           @click="toggleVoice"
         >{{ listening ? '⏹ 停止' : '🎤 语音' }}</el-button>
+        <span v-else class="voice-hint">
+          {{ isIOS ? 'iPhone 暂不支持网页语音，请用文字输入' : '当前浏览器不支持语音，请用文字输入' }}
+        </span>
         <el-button
           type="primary"
           class="glow-btn"
@@ -683,6 +708,12 @@ onMounted(async () => {
 }
 .voice-listening {
   animation: voicePulse 1s ease-in-out infinite;
+}
+.voice-hint {
+  align-self: center;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
 }
 @keyframes voicePulse {
   0%,
