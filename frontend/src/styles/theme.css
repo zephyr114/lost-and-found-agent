@@ -25,6 +25,25 @@ body {
   min-height: 100vh;
 }
 
+/* 键盘可访问性：清晰的焦点环 */
+:focus-visible {
+  outline: 2px solid var(--hdu-cyan);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 尊重系统「减少动态效果」设置 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 :root {
   --hdu-blue: #005bac;
   --hdu-blue-light: #1a7fd4;

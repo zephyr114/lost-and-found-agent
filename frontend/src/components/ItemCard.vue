@@ -1,10 +1,32 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Item } from '@/api/items'
 
-defineProps<{ item: Item }>()
+const props = defineProps<{ item: Item; highlight?: string }>()
 
 const router = useRouter()
+
+function escapeHtml(text: string): string {
+  return text.replace(/[&<>"']/g, (c) => {
+    const map: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }
+    return map[c] || c
+  })
+}
+
+const titleHtml = computed(() => {
+  const keyword = (props.highlight || '').trim()
+  const safeTitle = escapeHtml(props.item.title)
+  if (!keyword) return safeTitle
+  const safeKeyword = escapeHtml(keyword)
+  return safeTitle.split(safeKeyword).join(`<mark class="hl">${safeKeyword}</mark>`)
+})
 
 function typeText(t: string): string {
   return t === 'lost' ? '失物' : '招领'
@@ -33,7 +55,7 @@ function openDetail(id: number) {
     <div class="item-card__body">
       <div class="item-card__title">
         <el-tag size="small" :type="typeTag(item.item_type)">{{ typeText(item.item_type) }}</el-tag>
-        <span class="item-card__name">{{ item.title }}</span>
+        <span class="item-card__name" v-html="titleHtml"></span>
       </div>
       <div class="item-card__meta">
         <span>📍 {{ item.location }}</span>
@@ -89,6 +111,13 @@ function openDetail(id: number) {
   .item-card__img {
     height: 130px;
   }
+}
+
+:deep(.hl) {
+  background: rgba(0, 229, 255, 0.22);
+  color: #e8f3ff;
+  border-radius: 3px;
+  padding: 0 2px;
 }
 
 .item-card__type {

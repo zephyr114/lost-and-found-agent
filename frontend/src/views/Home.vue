@@ -204,8 +204,20 @@ function open(path: string) {
 
 /* ---- Hero ---- */
 .hero {
+  position: relative;
   text-align: center;
-  padding: 56px 16px 36px;
+  padding: 64px 16px 44px;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 55% at 50% 18%, rgba(0, 229, 255, 0.1), transparent 70%);
+  pointer-events: none;
+}
+.hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 .hero__badge {
@@ -276,7 +288,10 @@ function open(path: string) {
   border: 1px solid rgba(0, 229, 255, 0.14);
   background: rgba(255, 255, 255, 0.035);
   backdrop-filter: blur(10px);
-  transition: border-color 0.25s, box-shadow 0.25s;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+.stats-strip__item:hover {
+  transform: translateY(-3px);
 }
 
 .stats-strip__item:hover {

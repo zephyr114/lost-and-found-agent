@@ -43,4 +43,26 @@ export default defineConfig({
     // 开发环境代理到后端，避免跨域
     proxy,
   },
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        // 拆包：框架 / UI 库 / 图表 / 其余第三方，降低首屏单包体积
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('echarts') || id.includes('zrender')) return 'echarts'
+          if (id.includes('element-plus') || id.includes('@element-plus')) return 'element'
+          if (
+            id.includes('vue-router') ||
+            id.includes('pinia') ||
+            /node_modules[\\/]@vue[\\/]/.test(id) ||
+            /node_modules[\\/]vue[\\/]/.test(id)
+          ) {
+            return 'vue'
+          }
+          return 'vendor'
+        },
+      },
+    },
+  },
 })

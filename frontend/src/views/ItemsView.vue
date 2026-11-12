@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import { getCategories, getItems } from '@/api/items'
 import type { Item, ItemType } from '@/api/items'
 import ItemCard from '@/components/ItemCard.vue'
 
 const route = useRoute()
+const router = useRouter()
 
 const activeType = ref<ItemType>((route.query.type as ItemType) === 'found' ? 'found' : 'lost')
 const items = ref<Item[]>([])
@@ -45,6 +46,17 @@ async function load() {
 function search() {
   page.value = 1
   load()
+}
+
+const hasFilters = computed(
+  () => Boolean(filters.q.trim() || filters.category || filters.location.trim()),
+)
+
+function resetFilters() {
+  filters.q = ''
+  filters.category = ''
+  filters.location = ''
+  search()
 }
 
 watch(activeType, () => {
@@ -99,15 +111,26 @@ onMounted(async () => {
           </div>
         </el-col>
       </el-row>
-      <el-empty v-else-if="items.length === 0" description="暂无数据（新发布的信息需审核通过后展示）" />
+      <div v-else-if="items.length === 0" class="empty-state glass">
+        <div class="empty-state__icon">🔍</div>
+        <div class="empty-state__title">没有找到匹配的物品</div>
+        <div class="empty-state__hint">
+          试试更换关键词、取消筛选条件，或者直接发布一条信息让 AI 帮你找
+        </div>
+        <div class="empty-state__actions">
+          <el-button v-if="hasFilters" @click="resetFilters">清除筛选条件</el-button>
+          <el-button type="primary" @click="router.push('/publish/lost')">发布失物</el-button>
+          <el-button @click="router.push('/publish/found')">发布招领</el-button>
+        </div>
+      </div>
       <el-row v-else :gutter="16">
         <el-col v-for="item in items" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
-          <ItemCard :item="item" />
+          <ItemCard :item="item" :highlight="filters.q" />
         </el-col>
       </el-row>
     </div>
 
-    <div class="items-page__pager">
+    <div v-if="total > 0" class="items-page__pager">
       <el-pagination
         v-model:current-page="page"
         :page-size="size"
@@ -154,5 +177,33 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   margin-top: 8px;
+}
+
+.empty-state {
+  padding: 48px 24px;
+  border-radius: 16px;
+  text-align: center;
+}
+.empty-state__icon {
+  font-size: 44px;
+  opacity: 0.8;
+}
+.empty-state__title {
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+.empty-state__hint {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+.empty-state__actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 </style>

@@ -66,6 +66,7 @@ function handleCommand(cmd: string) {
 
 <template>
   <div class="app-shell">
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
     <ParticleBackground />
     <div class="hdu-watermark" aria-hidden="true">HDU</div>
 
@@ -128,7 +129,7 @@ function handleCommand(cmd: string) {
       </div>
     </header>
 
-    <main class="app-main">
+    <main id="main-content" class="app-main">
       <router-view v-slot="{ Component }">
         <transition name="page" mode="out-in">
           <component :is="Component" />
@@ -150,6 +151,23 @@ function handleCommand(cmd: string) {
   display: flex;
   flex-direction: column;
   z-index: 1;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -64px;
+  z-index: 100;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: #00e5ff;
+  color: #001018;
+  font-weight: 700;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+.skip-link:focus-visible {
+  top: 12px;
 }
 
 .bg-grid {
