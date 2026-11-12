@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -88,7 +88,19 @@ async function onSubmitReport() {
   }
 }
 
-onMounted(load)
+// 小屏下表单单列展示，避免标签与内容挤压
+const isMobile = ref(window.innerWidth < 640)
+function onResize() {
+  isMobile.value = window.innerWidth < 640
+}
+
+onMounted(() => {
+  load()
+  window.addEventListener('resize', onResize)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', onResize)
+})
 </script>
 
 <template>
@@ -148,7 +160,7 @@ onMounted(load)
         </div>
         <el-empty v-else description="暂无图片" :image-size="80" />
 
-        <el-descriptions :column="2" border class="detail-page__desc">
+        <el-descriptions :column="isMobile ? 1 : 2" border class="detail-page__desc">
           <el-descriptions-item label="物品类别">{{ item.category }}</el-descriptions-item>
           <el-descriptions-item label="颜色">{{ item.color || '—' }}</el-descriptions-item>
           <el-descriptions-item label="品牌">{{ item.brand || '—' }}</el-descriptions-item>

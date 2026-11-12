@@ -313,12 +313,22 @@ function handleCommand(cmd: string) {
     gap: 10px;
     flex-wrap: wrap;
   }
-  .app-nav {
-    order: 3;
-    width: 100%;
+  .app-logo {
+    min-width: 0;
+    flex: 1 1 auto;
   }
   .app-logo__text {
     font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .app-header__right {
+    flex-shrink: 0;
+  }
+  .app-nav {
+    order: 3;
+    width: 100%;
   }
   .hdu-badge {
     width: 32px;

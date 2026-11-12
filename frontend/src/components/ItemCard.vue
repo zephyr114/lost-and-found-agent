@@ -85,6 +85,12 @@ function openDetail(id: number) {
   opacity: 0.55;
 }
 
+@media (max-width: 560px) {
+  .item-card__img {
+    height: 130px;
+  }
+}
+
 .item-card__type {
   position: absolute;
   top: 10px;

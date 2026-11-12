@@ -3,6 +3,28 @@
    深色科技风主题：杭电蓝 #005BAC + 电光青 #00E5FF
    ========================================================= */
 
+/* 全局盒模型与基础重置（避免 width:100% + padding 导致横向溢出） */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+#app {
+  min-height: 100vh;
+}
+
 :root {
   --hdu-blue: #005bac;
   --hdu-blue-light: #1a7fd4;
