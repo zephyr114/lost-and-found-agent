@@ -363,7 +363,7 @@ onMounted(async () => {
           :rows="2"
           maxlength="2000"
           show-word-limit
-          placeholder="例如：我在图书馆丢了一个黑色苹果手机，外壳有点划痕"
+          placeholder="例如：我在正心楼丢了一个黑色耳机，外壳有点划痕"
         />
         <el-button type="primary" class="glow-btn" :loading="aiLoading" @click="onAiFill">✨ 智能识别并填充</el-button>
       </div>
@@ -413,7 +413,7 @@ onMounted(async () => {
       <div class="chat-input">
         <el-input
           v-model="chatInput"
-          placeholder="例如：我在图书馆丢了一个黑色耳机"
+          placeholder="例如：我在正心楼丢了一个黑色耳机"
           :disabled="chatDone"
           @keyup.enter="sendChat()"
         />

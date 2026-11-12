@@ -67,10 +67,20 @@ def recommendations(
     _check_item_visible(item, viewer)
 
     # 已有匹配记录直接返回
+    # 已有匹配记录：按「对方物品」去重，同一对只保留最高分，避免重复分析产生多条重复
     if item.item_type == "lost":
-        rows = db.query(Match).filter(Match.lost_item_id == item.id).order_by(Match.match_score.desc()).limit(10).all()
+        raw = db.query(Match).filter(Match.lost_item_id == item.id).order_by(Match.match_score.desc()).all()
+        counterpart = lambda m: m.found_item_id  # noqa: E731
     else:
-        rows = db.query(Match).filter(Match.found_item_id == item.id).order_by(Match.match_score.desc()).limit(10).all()
+        raw = db.query(Match).filter(Match.found_item_id == item.id).order_by(Match.match_score.desc()).all()
+        counterpart = lambda m: m.lost_item_id  # noqa: E731
+
+    deduped: dict[int, Match] = {}
+    for m in raw:
+        key = counterpart(m)
+        if key not in deduped or m.match_score > deduped[key].match_score:
+            deduped[key] = m
+    rows = sorted(deduped.values(), key=lambda m: (-m.match_score, -m.id))[:10]
     if rows:
         return {"items": matching.serialize_matches(db, rows), "total": len(rows)}
 

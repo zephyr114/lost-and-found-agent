@@ -347,6 +347,11 @@ function handleCommand(cmd: string) {
   .app-nav {
     order: 3;
     width: 100%;
+    gap: 2px;
+  }
+  .app-nav__link {
+    padding: 6px 9px;
+    font-size: 13.5px;
   }
   .hdu-badge {
     width: 32px;
