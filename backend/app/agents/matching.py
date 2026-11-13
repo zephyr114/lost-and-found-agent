@@ -484,15 +484,22 @@ def run_matching_pipeline(db: Session, item_id: int, user_id: int | None = None,
     # 1.5 图片识别：物品未填写颜色且有图片时，从首图提取主色补充属性
     if item.images and not item.color:
         t0 = time.perf_counter()
-        from app.utils.vision import analyze_image_file, resolve_upload_path
+        from app.models.stored_file import StoredFile
+        from app.utils.vision import analyze_image_bytes, analyze_image_file, resolve_upload_path
 
         image_result: dict = {}
-        img_path = resolve_upload_path(item.images[0])
-        if img_path and img_path.exists():
-            image_result = analyze_image_file(img_path)
-            if image_result.get("color"):
-                item.color = image_result["color"]
-                db.commit()
+        img_url = item.images[0]
+        if img_url.startswith("/api/files/"):
+            record = db.get(StoredFile, img_url.removeprefix("/api/files/"))
+            if record is not None:
+                image_result = analyze_image_bytes(record.data, record.content_type)
+        else:
+            img_path = resolve_upload_path(img_url)
+            if img_path and img_path.exists():
+                image_result = analyze_image_file(img_path)
+        if image_result.get("color"):
+            item.color = image_result["color"]
+            db.commit()
         _log_tool(
             db, user_id, "image_recognition", "analyze_image",
             {"item_id": item.id, "image": item.images[0]}, image_result,

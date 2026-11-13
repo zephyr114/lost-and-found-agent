@@ -12,8 +12,10 @@ from app.core.config import settings
 from app.models.claim import Claim
 from app.models.item import Item
 from app.models.match import Match
+from app.models.stored_file import StoredFile
 from app.models.user import User
 from app.schemas.item import ItemCreate, ItemUpdate
+from app.utils.files import save_files
 from app.utils.geo import haversine_km
 
 # 上传目录：backend/uploads
@@ -191,38 +193,12 @@ def delete_item(db: Session, item: Item) -> None:
 
 
 def save_images(db: Session, item: Item, files: list[UploadFile]) -> Item:
-    """保存上传图片到本地 uploads 目录，返回更新后的物品。"""
+    """保存上传图片（存入数据库，Serverless 冷启动后仍可访问），返回更新后的物品。"""
     existing = len(item.images or [])
     if existing + len(files) > settings.max_images_per_item:
         raise HTTPException(status_code=400, detail=f"每个物品最多 {settings.max_images_per_item} 张图片")
 
-    max_bytes = settings.max_upload_size_mb * 1024 * 1024
-    new_urls: list[str] = []
-    for file in files:
-        content = file.file.read()
-        if len(content) == 0:
-            raise HTTPException(status_code=400, detail="存在空文件")
-        if len(content) > max_bytes:
-            raise HTTPException(status_code=400, detail=f"图片不能超过 {settings.max_upload_size_mb}MB")
-        content_type = (file.content_type or "").split(";")[0].strip()
-        ext = Path(file.filename or "").suffix.lower()
-        if content_type not in ALLOWED_IMAGE_TYPES or (ext and ext not in ALLOWED_IMAGE_EXTS):
-            raise HTTPException(status_code=400, detail="仅支持 jpg / png / webp / gif 图片")
-        if not ext or ext not in ALLOWED_IMAGE_EXTS:
-            ext = {
-                "image/jpeg": ".jpg",
-                "image/png": ".png",
-                "image/webp": ".webp",
-                "image/gif": ".gif",
-            }.get(content_type, ".jpg")
-
-        now = datetime.now(timezone.utc)
-        rel = Path(f"{now.year:04d}") / f"{now.month:02d}" / f"{uuid.uuid4().hex}{ext}"
-        dest = UPLOAD_DIR / rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(content)
-        new_urls.append(f"/uploads/{rel.as_posix()}")
-
+    new_urls = save_files(files, db, subdir="items")
     item.images = (item.images or []) + new_urls
     db.commit()
     db.refresh(item)
@@ -230,17 +206,22 @@ def save_images(db: Session, item: Item, files: list[UploadFile]) -> Item:
 
 
 def remove_image(db: Session, item: Item, index: int) -> Item:
-    images = item.images or []
+    images = list(item.images or [])
     if index < 0 or index >= len(images):
         raise HTTPException(status_code=400, detail="图片序号无效")
     removed = images.pop(index)
     item.images = images
     db.commit()
-    # 尽力删除本地文件（失败不影响业务）
-    rel = removed.removeprefix("/uploads/")
-    try:
-        (UPLOAD_DIR / rel).unlink(missing_ok=True)
-    except OSError:
-        pass
+    # 删除数据库中的图片记录（兼容旧的本地上传路径）
+    if removed.startswith("/api/files/"):
+        record = db.get(StoredFile, removed.removeprefix("/api/files/"))
+        if record is not None:
+            db.delete(record)
+            db.commit()
+    else:
+        try:
+            (UPLOAD_DIR / removed.removeprefix("/uploads/")).unlink(missing_ok=True)
+        except OSError:
+            pass
     db.refresh(item)
     return item

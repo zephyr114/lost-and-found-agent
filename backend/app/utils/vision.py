@@ -6,13 +6,16 @@
 """
 
 import base64
+import io
 import json
 from pathlib import Path
 
 import httpx
 
 from app.core.config import settings
-from app.utils.files import UPLOAD_DIR
+from app.core.config import settings as _settings
+
+UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent / _settings.upload_dir
 
 # 常见颜色名称 → RGB（用于主色归类）
 NAMED_COLORS: dict[str, tuple[int, int, int]] = {
@@ -49,11 +52,14 @@ def _nearest_color(rgb: tuple[int, int, int]) -> str:
     return best
 
 
-def analyze_image_local(path: str | Path) -> dict:
+def analyze_image_local(source: str | Path | bytes) -> dict:
     """本地图像分析：主色、亮度、构图与可读标签（无需外部服务）。"""
     from PIL import Image
 
-    img = Image.open(path).convert("RGB")
+    if isinstance(source, (bytes, bytearray)):
+        img = Image.open(io.BytesIO(source)).convert("RGB")
+    else:
+        img = Image.open(source).convert("RGB")
     orig_w, orig_h = img.size
     img.thumbnail((64, 64))
     pixels = list(img.getdata())
@@ -177,6 +183,19 @@ def analyze_image_file(path: str | Path, content_type: str | None = None) -> dic
     if settings.llm_api_key:
         try:
             llm = analyze_image_with_llm(Path(path).read_bytes(), content_type or "image/jpeg")
+            if llm and any(v for v in llm.values()):
+                return {**local, **{k: v for k, v in llm.items() if v}, "source": "llm"}
+        except Exception:
+            pass
+    return {**local, "source": "local"}
+
+
+def analyze_image_bytes(content: bytes, content_type: str | None = None) -> dict:
+    """与 analyze_image_file 相同，但输入为字节（用于数据库中存储的图片）。"""
+    local = analyze_image_local(content)
+    if settings.llm_api_key:
+        try:
+            llm = analyze_image_with_llm(content, content_type or "image/jpeg")
             if llm and any(v for v in llm.values()):
                 return {**local, **{k: v for k, v in llm.items() if v}, "source": "llm"}
         except Exception:

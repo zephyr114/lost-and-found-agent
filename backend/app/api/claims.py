@@ -25,7 +25,7 @@ def create_claim(
     db: Session = Depends(get_db),
 ):
     item = item_service.get_item_or_404(db, item_id)
-    urls = save_files(files, subdir="claims") if files else []
+    urls = save_files(files, db, subdir="claims") if files else []
     claim = claim_service.create_claim(db, item, user, proof_description, contact, urls)
     return claim_service.serialize_claim(db, claim)
 
@@ -60,7 +60,7 @@ def add_claim_images(
     db: Session = Depends(get_db),
 ):
     claim = claim_service.get_claim_or_404(db, claim_id)
-    urls = save_files(files, subdir="claims")
+    urls = save_files(files, db, subdir="claims")
     claim = claim_service.add_proof_images(db, claim, user, urls)
     return claim_service.serialize_claim(db, claim)
 

@@ -1,4 +1,4 @@
-"""FastAPI 应用入口。"""
+﻿"""FastAPI 应用入口。"""
 
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import admin, agent, announcements, auth, claims, health, items, matches, messages, reports, stats, users
+from app.api import admin, agent, announcements, auth, claims, files, health, items, matches, messages, reports, stats, users
 from app.core.config import settings
 from app.core.ratelimit import RateLimitMiddleware
 from app.core.security import hash_password
@@ -100,6 +100,7 @@ app.include_router(claims.router, prefix="/api")
 app.include_router(messages.router, prefix="/api")
 app.include_router(matches.router, prefix="/api")
 app.include_router(agent.router, prefix="/api")
+app.include_router(files.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(announcements.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
@@ -120,3 +121,4 @@ if FRONTEND_DIST.is_dir():
         if candidate.is_file():
             return FileResponse(candidate)
         return FileResponse(FRONTEND_DIST / "index.html")
+

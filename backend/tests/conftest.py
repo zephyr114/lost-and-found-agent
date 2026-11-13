@@ -1,4 +1,4 @@
-"""测试配置：使用独立测试数据库，并在测试结束后清理。
+﻿"""测试配置：使用独立测试数据库，并在测试结束后清理。
 
 必须在导入应用之前设置环境变量（pytest 会先加载 conftest）。
 """
@@ -28,6 +28,10 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app.database.session import database_url  # noqa: E402
 from app.main import app  # noqa: E402
+from app.database.session import Base, engine  # noqa: E402
+
+# 确保测试表（含新增表）存在
+Base.metadata.create_all(bind=engine)
 
 # 安全断言：测试必须使用独立的测试数据库，绝不能碰到开发库
 assert "test_lost_found.db" in database_url, f"测试数据库配置异常: {database_url}"
@@ -49,3 +53,4 @@ def cleanup_db():
     Base.metadata.drop_all(bind=engine)
     engine.dispose()
     _safe_unlink(TEST_DB)
+

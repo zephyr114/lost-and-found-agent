@@ -201,7 +201,7 @@ def test_image_upload_and_serving(client):
     assert r.status_code == 200
     images = r.json()["images"]
     assert len(images) == 1
-    assert images[0].startswith("/uploads/")
+    assert images[0].startswith("/api/files/")
     # 图片可通过 /uploads 访问
     resp = client.get(images[0])
     assert resp.status_code == 200

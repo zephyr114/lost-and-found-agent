@@ -68,7 +68,7 @@ def test_analyze_image_endpoint(client):
     assert r.status_code == 200
     data = r.json()
     assert data["color"] == "红色"
-    assert data["image_url"].startswith("/uploads/")
+    assert data["image_url"].startswith("/api/files/")
 
 
 def test_analyze_image_requires_auth(client):

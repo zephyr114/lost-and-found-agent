@@ -1,10 +1,45 @@
-"""简单内存限流中间件：按 IP + 分类滑动窗口计数（无需 Redis，单进程有效）。"""
+"""分布式限流中间件：用数据库（Neon）做计数，多实例 / Serverless 下同样生效。
+
+设计：
+- 按（IP + 分类 + 时间窗）在 rate_limit_counters 表中累加
+- 使用 INSERT ... ON CONFLICT DO UPDATE ... RETURNING 保证原子性
+- 数据库异常时「失败放行」，不影响正常请求
+"""
 
 import time
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from app.database.session import engine
+
+_INCREMENT_SQL = text(
+    """
+    INSERT INTO rate_limit_counters ("key", window_start, count)
+    VALUES (:k, :w, 1)
+    ON CONFLICT ("key", window_start)
+    DO UPDATE SET count = rate_limit_counters.count + 1
+    RETURNING count
+    """
+)
+
+_CLEANUP_SQL = text("DELETE FROM rate_limit_counters WHERE window_start < :old")
+
+
+def _hit(key: str, window: int, limit: int) -> int | None:
+    """累加并返回当前窗口计数；异常返回 None（放行）。"""
+    try:
+        with engine.begin() as conn:
+            current = conn.execute(_INCREMENT_SQL, {"k": key, "w": window}).scalar()
+            # 偶发清理过期窗口，避免表无限增长
+            if current == 1:
+                conn.execute(_CLEANUP_SQL, {"old": window - 10})
+        return int(current) if current is not None else None
+    except Exception:
+        return None
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -15,27 +50,20 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.auth_limit = auth_limit
         self.global_limit = global_limit
         self.window = window_seconds
-        self.buckets: dict[str, list[float]] = {}
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
         if path.startswith("/api/"):
             ip = request.client.host if request.client else "unknown"
-            now = time.time()
             is_auth = path.startswith("/api/auth/")
             limit = self.auth_limit if is_auth else self.global_limit
+            window = int(time.time()) // self.window
             key = f"{ip}:{'auth' if is_auth else 'global'}"
-            bucket = [t for t in self.buckets.get(key, []) if now - t < self.window]
-            if len(bucket) >= limit:
+
+            current = await run_in_threadpool(_hit, key, window, limit)
+            if current is not None and current > limit:
                 return JSONResponse(
                     status_code=429,
                     content={"detail": "请求过于频繁，请稍后再试"},
                 )
-            bucket.append(now)
-            self.buckets[key] = bucket
-            # 防止内存无限增长
-            if len(self.buckets) > 10000:
-                self.buckets = {
-                    k: v for k, v in self.buckets.items() if any(now - t < self.window for t in v)
-                }
         return await call_next(request)
