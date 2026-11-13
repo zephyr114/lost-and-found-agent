@@ -1,6 +1,7 @@
 """管理服务：统计、审核、用户管理、举报处理、公告、日志。"""
 
 from fastapi import HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.agents import matching
@@ -46,6 +47,9 @@ def get_statistics(db: Session) -> dict:
         "matches_total": db.query(Match).count(),
         "reports_pending": db.query(Report).filter(Report.status == "pending").count(),
         "announcements_active": db.query(Announcement).filter(Announcement.status == "active").count(),
+        "category_distribution": dict(
+            db.query(Item.category, func.count(Item.id)).group_by(Item.category).all()
+        ),
     }
 
 

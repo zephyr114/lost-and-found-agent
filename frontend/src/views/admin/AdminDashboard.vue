@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import * as echarts from 'echarts/core'
 import { BarChart, PieChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
@@ -18,35 +18,59 @@ let barChart: echarts.ECharts | null = null
 
 async function load() {
   stats.value = await getStatistics()
+  // 等 v-if 渲染出容器后再初始化图表，否则 ref 为空、图表不显示
+  await nextTick()
   renderCharts()
 }
 
 function renderCharts() {
   if (!stats.value) return
+  const palette = ['#00e5ff', '#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#9b59b6', '#16a085', '#7f8c8d']
+  const categoryEntries = Object.entries(stats.value.category_distribution || {})
+  const pieData = categoryEntries.length
+    ? categoryEntries.map(([name, value], i) => ({ name, value, itemStyle: { color: palette[i % palette.length] } }))
+    : [
+        { value: stats.value.items_lost, name: '失物', itemStyle: { color: '#f56c6c' } },
+        { value: stats.value.items_found, name: '招领', itemStyle: { color: '#67c23a' } },
+      ]
+
   if (pieRef.value) {
+    pieChart?.dispose()
     pieChart = echarts.init(pieRef.value)
     pieChart.setOption({
+      textStyle: { color: '#8fb3d9' },
       tooltip: { trigger: 'item' },
-      legend: { bottom: 0 },
+      legend: { bottom: 0, textStyle: { color: '#8fb3d9' } },
       series: [
         {
           name: '物品类型',
           type: 'pie',
-          radius: ['40%', '65%'],
-          data: [
-            { value: stats.value.items_lost, name: '失物', itemStyle: { color: '#f56c6c' } },
-            { value: stats.value.items_found, name: '招领', itemStyle: { color: '#67c23a' } },
-          ],
+          radius: ['42%', '66%'],
+          center: ['50%', '46%'],
+          label: { color: '#cfe6ff', formatter: '{b}\n{c}' },
+          data: pieData,
         },
       ],
     })
   }
   if (barRef.value) {
+    barChart?.dispose()
     barChart = echarts.init(barRef.value)
     barChart.setOption({
+      textStyle: { color: '#8fb3d9' },
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['用户', '物品', '认领申请', '匹配记录', '待处理举报'] },
-      yAxis: { type: 'value' },
+      grid: { left: 40, right: 20, top: 30, bottom: 40 },
+      xAxis: {
+        type: 'category',
+        data: ['用户', '物品', '认领申请', '匹配记录', '待处理举报'],
+        axisLabel: { color: '#8fb3d9' },
+        axisLine: { lineStyle: { color: 'rgba(0,229,255,0.2)' } },
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { color: '#8fb3d9' },
+        splitLine: { lineStyle: { color: 'rgba(0,229,255,0.08)' } },
+      },
       series: [
         {
           type: 'bar',

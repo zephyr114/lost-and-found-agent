@@ -16,6 +16,7 @@ export interface Statistics {
   matches_total: number
   reports_pending: number
   announcements_active: number
+  category_distribution?: Record<string, number>
 }
 
 export interface PendingItem {

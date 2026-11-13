@@ -17,6 +17,7 @@ class StatisticsOut(BaseModel):
     matches_total: int
     reports_pending: int
     announcements_active: int
+    category_distribution: dict[str, int] = {}
 
 
 class AuditItemRequest(BaseModel):
