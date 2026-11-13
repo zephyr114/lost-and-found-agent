@@ -509,28 +509,31 @@ def run_matching_pipeline(db: Session, item_id: int, user_id: int | None = None,
         elapsed_ms=int((time.perf_counter() - t0) * 1000),
     )
 
-    # 3. 计算匹配分数并落库（阈值过滤，最多 5 条）
+    # 3. 计算匹配分数并落库（阈值过滤，最多 5 条；同一对物品已存在则更新，避免重复记录）
     stored: list[Match] = []
     for cand, result in scored:
         if result["score"] < MATCH_THRESHOLD or len(stored) >= 5:
             continue
-        if item.item_type == "lost":
-            match = Match(
-                lost_item_id=item.id,
-                found_item_id=cand.id,
-                match_score=result["score"],
-                match_reason=result["reasons"],
-                status="new",
-            )
+        lost_id = item.id if item.item_type == "lost" else cand.id
+        found_id = cand.id if item.item_type == "lost" else item.id
+        match = (
+            db.query(Match)
+            .filter(Match.lost_item_id == lost_id, Match.found_item_id == found_id)
+            .first()
+        )
+        if match is not None:
+            # 已存在：只更新分数与理由，保留原有状态（confirmed / handed_over 等）
+            match.match_score = result["score"]
+            match.match_reason = result["reasons"]
         else:
             match = Match(
-                lost_item_id=cand.id,
-                found_item_id=item.id,
+                lost_item_id=lost_id,
+                found_item_id=found_id,
                 match_score=result["score"],
                 match_reason=result["reasons"],
                 status="new",
             )
-        db.add(match)
+            db.add(match)
         stored.append(match)
     db.commit()
 

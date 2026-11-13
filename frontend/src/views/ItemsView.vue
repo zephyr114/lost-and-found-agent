@@ -72,6 +72,7 @@ onMounted(async () => {
 
 <template>
   <div class="items-page">
+    <h1 class="sr-only">{{ activeType === 'found' ? '招领信息列表' : '失物信息列表' }}</h1>
     <div class="items-page__tabs">
       <el-radio-group v-model="activeType" size="large">
         <el-radio-button value="lost">🔍 失物信息</el-radio-button>

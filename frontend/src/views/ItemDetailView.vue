@@ -115,12 +115,12 @@ onUnmounted(() => {
       <el-card shadow="never" class="detail-page__card">
         <div class="detail-page__top">
           <div>
-            <h2 class="detail-page__title">
+            <h1 class="detail-page__title">
               <el-tag :type="item.item_type === 'lost' ? 'danger' : 'success'" size="large">
                 {{ typeText(item.item_type) }}
               </el-tag>
               {{ item.title }}
-            </h2>
+            </h1>
             <div class="detail-page__tags">
               <el-tag v-if="item.audit_status === 'pending'" type="warning" size="small">待审核（仅自己和管理员可见）</el-tag>
               <el-tag v-if="item.status === 'claimed'" type="info" size="small">已被认领</el-tag>

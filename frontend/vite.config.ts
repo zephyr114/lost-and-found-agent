@@ -47,11 +47,15 @@ export default defineConfig({
     chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
-        // 拆包：框架 / UI 库 / 图表 / 其余第三方，降低首屏单包体积
+        // 拆包：框架 / 图表 / 其余第三方
+        // 注意：不再把所有 element-plus 打进一个共享 chunk，
+        // 否则首页会被迫下载管理后台/表单才用到的组件；交给 Vite 按路由自然拆分。
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return
           if (id.includes('echarts') || id.includes('zrender')) return 'echarts'
-          if (id.includes('element-plus') || id.includes('@element-plus')) return 'element'
+          // element-plus 不归入共享 chunk：让 Vite 按「谁引用了它」拆分，
+          // 避免首页被迫加载后台/表单组件
+          if (id.includes('element-plus') || id.includes('@element-plus')) return
           if (
             id.includes('vue-router') ||
             id.includes('pinia') ||

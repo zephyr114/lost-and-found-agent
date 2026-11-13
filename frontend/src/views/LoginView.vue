@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -40,7 +40,7 @@ async function onSubmit() {
     <el-card class="auth-card" shadow="always">
       <template #header>
         <div class="auth-card__header">
-          <h2>登录</h2>
+          <h1 class="auth-title">登录</h1>
           <p>支持用户名 / 邮箱 / 手机号</p>
         </div>
       </template>
@@ -94,3 +94,10 @@ async function onSubmit() {
   color: var(--el-text-color-secondary);
 }
 </style>
+
+
+.auth-title {
+  margin: 0 0 18px;
+  font-size: 22px;
+  text-align: center;
+}
