@@ -3,6 +3,8 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
+import QRCode from 'qrcode'
+
 import { deleteImage, deleteItem, getItem } from '@/api/items'
 import type { Item } from '@/api/items'
 import { submitReport } from '@/api/reports'
@@ -16,6 +18,143 @@ const item = ref<Item | null>(null)
 const loading = ref(true)
 const notFound = ref(false)
 const reportDialog = ref(false)
+const posterVisible = ref(false)
+const posterLoading = ref(false)
+const posterUrl = ref('')
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
+  const lines: string[] = []
+  let line = ''
+  for (const ch of text) {
+    const test = line + ch
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line)
+      line = ch
+    } else {
+      line = test
+    }
+  }
+  if (line) lines.push(line)
+  if (lines.length > maxLines) {
+    const cut = lines.slice(0, maxLines)
+    cut[maxLines - 1] = cut[maxLines - 1].slice(0, -1) + '…'
+    return cut
+  }
+  return lines
+}
+
+async function openPoster() {
+  if (!item.value) return
+  posterVisible.value = true
+  posterLoading.value = true
+  posterUrl.value = ''
+  try {
+    const W = 900
+    const H = 1200
+    const canvas = document.createElement('canvas')
+    canvas.width = W
+    canvas.height = H
+    const ctx = canvas.getContext('2d')!
+    const font = (size: number, bold = false) => `${bold ? 'bold ' : ''}${size}px "Microsoft YaHei", "PingFang SC", sans-serif`
+
+    const bg = ctx.createLinearGradient(0, 0, W, H)
+    bg.addColorStop(0, '#050a14')
+    bg.addColorStop(0.55, '#071a2c')
+    bg.addColorStop(1, '#0b2740')
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, W, H)
+
+    const glow = ctx.createRadialGradient(W * 0.82, 90, 0, W * 0.82, 90, 460)
+    glow.addColorStop(0, 'rgba(0,229,255,0.25)')
+    glow.addColorStop(1, 'rgba(0,229,255,0)')
+    ctx.fillStyle = glow
+    ctx.fillRect(0, 0, W, H)
+
+    ctx.fillStyle = '#00e5ff'
+    ctx.fillRect(0, 0, W, 10)
+
+    ctx.fillStyle = '#00e5ff'
+    ctx.font = font(30, true)
+    ctx.fillText('HDU · 智能失物招领', 64, 96)
+    ctx.fillStyle = '#8fb3d9'
+    ctx.font = font(21)
+    ctx.fillText('杭州电子科技大学 · Lost & Found', 64, 134)
+
+    const isLost = item.value.item_type === 'lost'
+    ctx.fillStyle = isLost ? '#ff6b81' : '#3ddc97'
+    ctx.font = font(26, true)
+    ctx.fillText(isLost ? '寻 物 启 事' : '失 物 招 领', 64, 210)
+
+    ctx.fillStyle = '#ffffff'
+    ctx.font = font(54, true)
+    const titleLines = wrapText(ctx, item.value.title, W - 128, 2)
+    titleLines.forEach((line, i) => ctx.fillText(line, 64, 300 + i * 70))
+    let y = 300 + titleLines.length * 70 + 10
+
+    ctx.strokeStyle = 'rgba(0,229,255,0.25)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(64, y)
+    ctx.lineTo(W - 64, y)
+    ctx.stroke()
+    y += 58
+
+    const rows: [string, string][] = [
+      ['类别', item.value.category],
+      ['地点', item.value.location],
+      ['时间', new Date(item.value.event_time).toLocaleString('zh-CN', { hour12: false })],
+    ]
+    ctx.font = font(26)
+    for (const [k, v] of rows) {
+      ctx.fillStyle = '#7fa6c9'
+      ctx.fillText(k, 64, y)
+      ctx.fillStyle = '#eaf6ff'
+      ctx.fillText(v, 190, y)
+      y += 52
+    }
+
+    if (item.value.description) {
+      y += 20
+      ctx.fillStyle = '#a9c6e2'
+      ctx.font = font(23)
+      const descLines = wrapText(ctx, item.value.description, W - 128, 4)
+      descLines.forEach((line, i) => ctx.fillText(line, 64, y + i * 38))
+    }
+
+    const qrSize = 210
+    const qrData = await QRCode.toDataURL(`${window.location.origin}/items/${item.value.id}`, {
+      width: qrSize,
+      margin: 1,
+      color: { dark: '#04121f', light: '#ffffff' },
+    })
+    const img = new Image()
+    img.src = qrData
+    await img.decode()
+    const qrX = W - 64 - qrSize
+    const qrY = H - 64 - qrSize
+    ctx.fillStyle = '#ffffff'
+    ctx.beginPath()
+    ctx.roundRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 16)
+    ctx.fill()
+    ctx.drawImage(img, qrX, qrY, qrSize, qrSize)
+
+    ctx.fillStyle = '#8fb3d9'
+    ctx.font = font(22)
+    ctx.fillText('扫码查看详情', 64, qrY + 56)
+    ctx.fillStyle = '#00e5ff'
+    ctx.font = font(26, true)
+    ctx.fillText('hdulosttrack.eu.cc', 64, qrY + 108)
+    ctx.fillStyle = '#5f7f9e'
+    ctx.font = font(20)
+    ctx.fillText('杭州电子科技大学 · 智能失物招领平台', 64, H - 36)
+
+    posterUrl.value = canvas.toDataURL('image/png')
+  } catch (e) {
+    ElMessage.error('海报生成失败，请重试')
+  } finally {
+    posterLoading.value = false
+  }
+}
 const reportSubmitting = ref(false)
 const reportReasons = ['虚假信息', '恶意认领', '违规图片', '联系方式诈骗', '重复发布', '不当内容']
 const reportForm = reactive({
@@ -147,6 +286,7 @@ onUnmounted(() => {
             <el-button v-if="canEdit" type="primary" plain @click="router.push(`/items/${item.id}/edit`)">编辑</el-button>
             <el-button v-if="canEdit" type="danger" plain @click="onDelete">删除</el-button>
             <el-button v-if="userStore.isLoggedIn && !isOwner" type="danger" plain @click="reportDialog = true">举报</el-button>
+            <el-button v-if="item.audit_status === 'approved'" plain @click="openPoster">🖼️ 生成启事海报</el-button>
           </div>
         </div>
 
@@ -179,7 +319,19 @@ onUnmounted(() => {
         </div>
       </el-card>
 
-      <el-dialog v-model="reportDialog" title="举报这条信息" width="480px">
+      <el-dialog v-model="posterVisible" title="寻物启事海报" width="420px">
+      <div v-loading="posterLoading" class="poster-preview">
+        <img v-if="posterUrl" :src="posterUrl" alt="寻物启事海报" />
+      </div>
+      <template #footer>
+        <a v-if="posterUrl" :href="posterUrl" :download="`启事-${item?.title || '物品'}.png`">
+          <el-button type="primary">下载图片</el-button>
+        </a>
+        <el-button @click="posterVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="reportDialog" title="举报这条信息" width="480px">
         <el-form label-position="top">
           <el-form-item label="举报原因">
             <el-select v-model="reportForm.reason" style="width: 100%">
@@ -200,6 +352,19 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.poster-preview {
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.poster-preview img {
+  width: 100%;
+  border-radius: 12px;
+  display: block;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
 .detail-page {
   max-width: 900px;
   margin: 0 auto;

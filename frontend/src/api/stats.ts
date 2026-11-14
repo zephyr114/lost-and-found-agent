@@ -9,6 +9,7 @@ export interface Overview {
   matches_total: number
   matches_confirmed: number
   users_total: number
+  top_locations?: { name: string; lost: number; found: number; total: number }[]
 }
 
 export async function getOverview(): Promise<Overview> {

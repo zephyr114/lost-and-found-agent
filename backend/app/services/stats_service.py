@@ -1,5 +1,6 @@
 """公开统计数据服务：首页数据看板使用（不包含敏感信息）。"""
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session, aliased
 
 from app.models.claim import Claim
@@ -19,8 +20,22 @@ def get_public_statistics(db: Session) -> dict:
         .join(found_item, found_item.id == Match.found_item_id)
         .filter(lost_item.audit_status == "approved", found_item.audit_status == "approved")
     )
+    rows = (
+        db.query(Item.location, Item.item_type, func.count(Item.id))
+        .filter(approved)
+        .group_by(Item.location, Item.item_type)
+        .all()
+    )
+    agg: dict[str, dict] = {}
+    for name, item_type, count in rows:
+        entry = agg.setdefault(name, {"name": name, "lost": 0, "found": 0, "total": 0})
+        entry["lost" if item_type == "lost" else "found"] += count
+        entry["total"] += count
+    top_locations = sorted(agg.values(), key=lambda e: e["total"], reverse=True)[:6]
+
     return {
         "items_total": db.query(Item).filter(approved).count(),
+        "top_locations": top_locations,
         "items_lost": db.query(Item).filter(approved, Item.item_type == "lost").count(),
         "items_found": db.query(Item).filter(approved, Item.item_type == "found").count(),
         "items_claimed": db.query(Item).filter(approved, Item.status == "claimed").count(),

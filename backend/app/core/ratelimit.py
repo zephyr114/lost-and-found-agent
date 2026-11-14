@@ -42,6 +42,19 @@ def _hit(key: str, window: int, limit: int) -> int | None:
         return None
 
 
+def _client_ip(request: Request) -> str:
+    """取真实客户端 IP：优先 Cloudflare 头，其次 X-Forwarded-For，最后 socket 地址。"""
+    cf = request.headers.get("cf-connecting-ip")
+    if cf:
+        return cf.strip()
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        first = xff.split(",")[0].strip()
+        if first:
+            return first
+    return request.client.host if request.client else "unknown"
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """对 /api 请求按 IP 限流；认证接口使用更严格的限额。"""
 
@@ -54,7 +67,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
         if path.startswith("/api/"):
-            ip = request.client.host if request.client else "unknown"
+            ip = _client_ip(request)
             is_auth = path.startswith("/api/auth/")
             limit = self.auth_limit if is_auth else self.global_limit
             window = int(time.time()) // self.window

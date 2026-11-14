@@ -57,6 +57,9 @@ const lostPct = computed(() => {
   return Math.round((o.items_lost / total) * 100)
 })
 
+const topLocations = computed(() => overview.value?.top_locations ?? [])
+const maxLocation = computed(() => Math.max(...topLocations.value.map((l) => l.total), 1))
+
 const donutStyle = computed(() => ({
   background: `conic-gradient(#ff6b81 0 ${lostPct.value}%, #3ddc97 ${lostPct.value}% 100%)`,
 }))
@@ -105,6 +108,23 @@ const donutStyle = computed(() => ({
                 招领 {{ overview?.items_found ?? 0 }} 条
               </div>
             </div>
+          </div>
+        </div>
+
+        <div class="chart-card glass">
+          <h3 class="chart-card__title">📍 高频地点 TOP6</h3>
+          <div class="bars">
+            <div v-for="loc in topLocations" :key="loc.name" class="bar-row">
+              <span class="bar-row__label">{{ loc.name }}</span>
+              <div class="bar-row__track">
+                <div
+                  class="bar-row__fill"
+                  :style="{ width: `${Math.min((loc.total / maxLocation) * 100, 100)}%`, background: 'linear-gradient(90deg, #00e5ff66, #00e5ff)', boxShadow: '0 0 12px #00e5ff66' }"
+                />
+              </div>
+              <span class="bar-row__value">{{ loc.total }}</span>
+            </div>
+            <p v-if="!topLocations.length" class="bar-row__label">暂无数据</p>
           </div>
         </div>
 
@@ -191,7 +211,7 @@ const donutStyle = computed(() => ({
 
 .charts {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -306,6 +326,12 @@ const donutStyle = computed(() => ({
   font-weight: 700;
   color: #e8f3ff;
   font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1080px) {
+  .charts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 900px) {
