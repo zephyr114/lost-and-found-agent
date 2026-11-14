@@ -34,6 +34,21 @@ export interface StoryItem {
   story?: string
 }
 
+export interface HandoverItem {
+  id: number
+  title: string
+  category: string
+  location: string
+  images: string[]
+  username: string | null
+}
+
+export interface HandoverInfo extends MatchInfo {
+  code_valid: boolean
+  lost_item: HandoverItem
+  found_item: HandoverItem
+}
+
 export interface MatchListResponse {
   items: MatchInfo[]
   total: number
@@ -61,6 +76,11 @@ export async function getHandoverCode(matchId: number): Promise<string> {
 
 export async function handoverMatch(matchId: number, code: string): Promise<MatchInfo> {
   const { data } = await http.post<MatchInfo>(`/api/matches/${matchId}/handover`, { code })
+  return data
+}
+
+export async function getHandoverInfo(matchId: number, code: string): Promise<HandoverInfo> {
+  const { data } = await http.get<HandoverInfo>(`/api/matches/${matchId}/handover-info`, { params: { code } })
   return data
 }
 

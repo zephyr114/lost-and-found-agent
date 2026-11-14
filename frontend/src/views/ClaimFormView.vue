@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { UploadRawFile, UploadUserFile } from 'element-plus'
 
+import { claimCheck } from '@/api/agent'
+import type { ClaimCheckResult } from '@/api/agent'
 import { createClaim } from '@/api/claims'
 import { getItem } from '@/api/items'
 import type { Item } from '@/api/items'
@@ -23,6 +25,27 @@ const form = reactive({
   contact: '',
 })
 const fileList = ref<UploadUserFile[]>([])
+const checking = ref(false)
+const checkResult = ref<ClaimCheckResult | null>(null)
+
+const verdictText = { high: '高度吻合', medium: '部分吻合', low: '信息不足' } as const
+
+async function onCheck() {
+  if (!item.value) return
+  if (!form.proof_description.trim()) {
+    ElMessage.warning('请先填写物品特殊特征或证明说明')
+    return
+  }
+  checking.value = true
+  try {
+    checkResult.value = await claimCheck(item.value.id, form.proof_description)
+  } catch (e: unknown) {
+    const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail || '预检失败，请稍后再试')
+  } finally {
+    checking.value = false
+  }
+}
 
 onMounted(async () => {
   try {
@@ -87,6 +110,19 @@ async function onSubmit() {
             placeholder="例如：包内有我的校园卡，卡号后四位 1234；耳机盒底部有刻字 XX"
           />
         </el-form-item>
+        <el-alert
+          v-if="checkResult"
+          :type="checkResult.verdict === 'high' ? 'success' : checkResult.verdict === 'medium' ? 'warning' : 'error'"
+          :closable="false"
+          show-icon
+          class="claim-form-page__alert"
+        >
+          <template #title>AI 可信度预检：{{ checkResult.score }} 分 · {{ verdictText[checkResult.verdict] }}</template>
+          <div v-for="r in checkResult.reasons" :key="r">· {{ r }}</div>
+          <div v-if="checkResult.suggestions?.length" class="claim-form-page__tip">
+            建议补充：{{ checkResult.suggestions.map((s) => s.label).join('、') }}（可提高可信度）
+          </div>
+        </el-alert>
         <el-form-item label="联系方式（选填，便于发布者联系你）">
           <el-input v-model="form.contact" maxlength="100" placeholder="手机号或微信" />
         </el-form-item>
@@ -106,6 +142,7 @@ async function onSubmit() {
         </el-form-item>
         <div class="claim-form-page__actions">
           <el-button @click="router.back()">取消</el-button>
+          <el-button :loading="checking" @click="onCheck">🤖 AI 预检</el-button>
           <el-button type="primary" :loading="submitting" @click="onSubmit">提交申请</el-button>
         </div>
       </el-form>
@@ -114,6 +151,12 @@ async function onSubmit() {
 </template>
 
 <style scoped>
+.claim-form-page__tip {
+  margin-top: 6px;
+  color: #e6a23c;
+  font-size: 12px;
+}
+
 .claim-form-page {
   max-width: 720px;
   margin: 0 auto;

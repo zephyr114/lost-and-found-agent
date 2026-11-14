@@ -14,6 +14,9 @@ export interface Claim {
   updated_at: string
   item_title: string | null
   item_type: string | null
+  ai_score?: number | null
+  ai_verdict?: 'high' | 'medium' | 'low' | null
+  ai_reasons?: string[]
 }
 
 export interface ClaimListResponse {

@@ -6,6 +6,8 @@ import { ElCollapseTransition } from 'element-plus'
 
 import { getItems } from '@/api/items'
 import type { Item } from '@/api/items'
+import QRCode from 'qrcode'
+
 import { analyzeItem, confirmMatch, getHandoverCode, getRecommendations, handoverMatch } from '@/api/matches'
 import type { MatchInfo } from '@/api/matches'
 import MatchRadar from '@/components/MatchRadar.vue'
@@ -118,6 +120,32 @@ const handoverDialog = ref(false)
 const handoverTarget = ref<MatchInfo | null>(null)
 const handoverInput = ref('')
 const handoverLoading = ref(false)
+const qrDialog = ref(false)
+const qrImage = ref('')
+const qrCode = ref('')
+const qrLoading = ref(false)
+
+async function openQr(m: MatchInfo) {
+  qrDialog.value = true
+  qrLoading.value = true
+  qrImage.value = ''
+  try {
+    let code = codes.value[m.id] || m.handover_code || ''
+    if (!code) {
+      code = await getHandoverCode(m.id)
+      codes.value[m.id] = code
+    }
+    qrCode.value = code
+    const link = `${window.location.origin}/handover/${m.id}?code=${code}`
+    qrImage.value = await QRCode.toDataURL(link, { width: 360, margin: 1, color: { dark: '#04121f', light: '#ffffff' } })
+  } catch (e: unknown) {
+    const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail || '二维码生成失败')
+    qrDialog.value = false
+  } finally {
+    qrLoading.value = false
+  }
+}
 
 async function onLoadCode(m: MatchInfo) {
   try {
@@ -253,11 +281,20 @@ onMounted(loadItems)
               获取交接码
             </el-button>
             <el-tag v-if="m.status === 'handed_over'" type="success" effect="dark" size="small">✅ 已找回</el-tag>
+            <el-button v-if="m.status === 'confirmed' || m.status === 'handed_over'" size="small" plain @click="openQr(m)">📱 出示二维码</el-button>
             <el-button v-else size="small" type="success" class="glow-btn" @click="openHandover(m)">确认交接</el-button>
           </div>
         </div>
       </div>
     </el-card>
+
+    <el-dialog v-model="qrDialog" title="扫码交接" width="400px">
+      <div v-loading="qrLoading" class="qr-panel">
+        <img v-if="qrImage" :src="qrImage" alt="交接二维码" class="qr-panel__img" />
+        <p class="qr-panel__hint">让对方用手机扫码打开交接页，核对物品后点击「确认完成交接」。</p>
+        <p class="qr-panel__code">交接码：<b>{{ qrCode }}</b></p>
+      </div>
+    </el-dialog>
 
     <el-dialog v-model="handoverDialog" title="确认交接" width="420px">
       <p class="handover-hint">请双方当面核对交接码后输入，确认物品已交还失主。确认后双方物品将标记为「已找回」。</p>
@@ -271,6 +308,26 @@ onMounted(loadItems)
 </template>
 
 <style scoped>
+.qr-panel {
+  text-align: center;
+}
+.qr-panel__img {
+  width: 240px;
+  height: 240px;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+}
+.qr-panel__hint {
+  margin: 12px 0 4px;
+  color: #8fb3d9;
+  font-size: 13px;
+}
+.qr-panel__code {
+  margin: 4px 0 0;
+  color: #eaf6ff;
+}
+
 .matches-page {
   max-width: 900px;
   margin: 0 auto;

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.agents import dialog, matching
+from app.agents import claim_scoring, dialog, matching
 from app.api.deps import get_current_user
 from app.database.session import get_db
 from app.models.agent_log import AgentLog
@@ -37,6 +37,26 @@ class PrecheckRequest(BaseModel):
     title: str = Field(min_length=1, max_length=100)
     description: str = Field(default="", max_length=2000)
     location: str = Field(default="", max_length=100)
+
+
+class ClaimCheckRequest(BaseModel):
+    """认领描述可信度预检请求。"""
+
+    item_id: int
+    description: str = Field(min_length=1, max_length=2000)
+
+
+@router.post("/claim-check", summary="认领描述可信度预检（防冒领）")
+def claim_check(data: ClaimCheckRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """把认领说明与招领物品做相似度打分，辅助拾获者判断是否为真失主。"""
+    from app.services import item_service
+
+    item = item_service.get_item_or_404(db, data.item_id)
+    if item.item_type != "found":
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="只有招领物品可以预检认领描述")
+    return claim_scoring.score_claim(item, data.description)
 
 
 @router.post("/precheck", summary="发布前 AI 预审（风险与信息完整度）")

@@ -19,6 +19,14 @@ def get_claim_or_404(db: Session, claim_id: int) -> Claim:
 def serialize_claim(db: Session, claim: Claim) -> dict:
     applicant = db.get(User, claim.applicant_id)
     item = db.get(Item, claim.item_id)
+    ai = None
+    if item is not None:
+        try:
+            from app.agents.claim_scoring import score_claim
+
+            ai = score_claim(item, claim.proof_description)
+        except Exception:
+            ai = None
     return {
         "id": claim.id,
         "item_id": claim.item_id,
@@ -33,6 +41,9 @@ def serialize_claim(db: Session, claim: Claim) -> dict:
         "updated_at": claim.updated_at,
         "item_title": item.title if item else None,
         "item_type": item.item_type if item else None,
+        "ai_score": ai["score"] if ai else None,
+        "ai_verdict": ai["verdict"] if ai else None,
+        "ai_reasons": ai["reasons"] if ai else [],
     }
 
 

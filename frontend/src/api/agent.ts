@@ -50,6 +50,18 @@ export interface PrecheckResult {
   suggestion: string
 }
 
+export interface ClaimCheckResult {
+  score: number
+  verdict: 'high' | 'medium' | 'low'
+  reasons: string[]
+  suggestions: { field: string; label: string; current: string; suggestion: string; gain: number; score_after: number }[]
+}
+
+export async function claimCheck(itemId: number, description: string): Promise<ClaimCheckResult> {
+  const { data } = await http.post<ClaimCheckResult>('/api/agent/claim-check', { item_id: itemId, description })
+  return data
+}
+
 export async function extractAttributes(text: string): Promise<ExtractedAttributes> {
   const { data } = await http.post<ExtractedAttributes>('/api/agent/extract', { text })
   return data

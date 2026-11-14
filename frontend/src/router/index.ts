@@ -92,6 +92,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/handover/:id(\\d+)',
+      name: 'handover',
+      component: () => import('@/views/HandoverView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/matches',
       name: 'matches',
       component: () => import('@/views/MatchResultsView.vue'),

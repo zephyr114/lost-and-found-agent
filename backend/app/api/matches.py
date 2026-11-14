@@ -222,6 +222,50 @@ def get_handover_code(
     return {"handover_code": generate_handover_code(m.id)}
 
 
+@router.get("/{match_id}/handover-info", summary="交接信息（扫码页使用）")
+def handover_info(
+    match_id: int,
+    code: str = Query(default=""),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """校验交接码并返回双方物品摘要，供扫码交接页展示。"""
+    m = db.get(Match, match_id)
+    if m is None:
+        raise HTTPException(status_code=404, detail="匹配记录不存在")
+    lost = db.get(Item, m.lost_item_id)
+    found = db.get(Item, m.found_item_id)
+    if lost is None or found is None:
+        raise HTTPException(status_code=404, detail="物品不存在")
+    if user.id not in {lost.user_id, found.user_id} and user.role != "admin":
+        raise HTTPException(status_code=403, detail="只有匹配双方可以查看交接信息")
+
+    valid = code.strip().upper() == generate_handover_code(m.id)
+    data = _single_match_dict(db, m, include_code=True)
+    data.update(
+        {
+            "code_valid": valid,
+            "lost_item": {
+                "id": lost.id,
+                "title": lost.title,
+                "category": lost.category,
+                "location": lost.location,
+                "images": lost.images or [],
+                "username": (db.get(User, lost.user_id).username if db.get(User, lost.user_id) else None),
+            },
+            "found_item": {
+                "id": found.id,
+                "title": found.title,
+                "category": found.category,
+                "location": found.location,
+                "images": found.images or [],
+                "username": (db.get(User, found.user_id).username if db.get(User, found.user_id) else None),
+            },
+        }
+    )
+    return data
+
+
 @router.post("/{match_id}/handover", response_model=MatchOut, summary="确认交接（输入交接码，双方均可操作）")
 def handover_match(
     match_id: int,

@@ -21,6 +21,9 @@ class ClaimOut(BaseModel):
     updated_at: datetime
     item_title: str | None = None
     item_type: str | None = None
+    ai_score: int | None = None
+    ai_verdict: str | None = None
+    ai_reasons: list[str] = []
 
 
 class ClaimListResponse(BaseModel):

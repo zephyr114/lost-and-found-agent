@@ -88,6 +88,18 @@ onMounted(load)
           </template>
         </el-table-column>
         <el-table-column prop="applicant_name" label="申请人" width="110" />
+        <el-table-column label="AI 可信度" width="110">
+          <template #default="{ row }">
+            <el-tag
+              v-if="row.ai_score != null"
+              size="small"
+              :type="row.ai_verdict === 'high' ? 'success' : row.ai_verdict === 'medium' ? 'warning' : 'danger'"
+            >
+              {{ row.ai_score }} 分
+            </el-tag>
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column label="特征说明" min-width="200">
           <template #default="{ row }">
             <div>{{ row.proof_description }}</div>
