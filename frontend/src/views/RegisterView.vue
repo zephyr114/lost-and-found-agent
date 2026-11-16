@@ -18,6 +18,7 @@ const form = reactive({
   confirmPassword: '',
 })
 const loading = ref(false)
+const agree = ref(false)
 
 const rules: FormRules = {
   username: [
@@ -31,7 +32,7 @@ const rules: FormRules = {
   phone: [{ pattern: /^1\d{10}$/, message: '手机号格式不正确', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 72, message: '密码长度为 6-72 个字符', trigger: 'blur' },
+    { min: 8, max: 72, message: '密码长度为 8-72 个字符', trigger: 'blur' },
   ],
   confirmPassword: [
     { required: true, message: '请再次输入密码', trigger: 'blur' },
@@ -49,6 +50,10 @@ const rules: FormRules = {
 }
 
 async function onSubmit() {
+  if (!agree.value) {
+    ElMessage.warning('请先阅读并同意《用户协议》和《隐私政策》')
+    return
+  }
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
   loading.value = true
@@ -90,10 +95,18 @@ async function onSubmit() {
           <el-input v-model="form.phone" placeholder="11 位手机号" clearable />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="至少 6 位" show-password />
+          <el-input v-model="form.password" type="password" placeholder="至少 8 位" show-password />
         </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
           <el-input v-model="form.confirmPassword" type="password" placeholder="再次输入密码" show-password />
+        </el-form-item>
+        <el-form-item>
+          <el-checkbox v-model="agree">
+            我已阅读并同意
+            <router-link to="/terms" target="_blank" @click.stop>《用户协议》</router-link>
+            和
+            <router-link to="/privacy" target="_blank" @click.stop>《隐私政策》</router-link>
+          </el-checkbox>
         </el-form-item>
         <el-button type="primary" class="auth-card__submit" :loading="loading" native-type="submit">
           注 册

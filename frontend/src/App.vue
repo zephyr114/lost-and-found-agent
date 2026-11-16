@@ -140,6 +140,7 @@ function handleCommand(cmd: string) {
     <footer class="app-footer">
       <div class="app-footer__motto">笃学 · 力行 · 守正 · 求新</div>
       <div class="app-footer__copy">© 2026 杭州电子科技大学 · 智能失物招领 · Lost-and-Found Intelligent Platform</div>
+      <div class="app-footer__links"><router-link to="/terms">用户协议</router-link><span>·</span><router-link to="/privacy">隐私政策</router-link></div>
     </footer>
   </div>
 </template>
@@ -320,6 +321,21 @@ function handleCommand(cmd: string) {
   margin-bottom: 6px;
 }
 
+.app-footer__links {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #5f7f9e;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.app-footer__links a {
+  color: #7f9dbb;
+  text-decoration: none;
+}
+.app-footer__links a:hover {
+  color: #00e5ff;
+}
 .app-footer__copy {
   font-size: 12px;
   color: #6f8cb0;
