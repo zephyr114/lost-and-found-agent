@@ -4,7 +4,7 @@ import sys
 
 import httpx
 
-BASE = sys.argv[1] if len(sys.argv) > 1 else "https://hdulosttrack.eu.cc"
+BASE = sys.argv[1] if len(sys.argv) > 1 else "https://hdulosttrack.com"
 c = httpx.Client(base_url=BASE, timeout=40)
 
 

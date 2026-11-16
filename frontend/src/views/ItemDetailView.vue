@@ -143,7 +143,7 @@ async function openPoster() {
     ctx.fillText('扫码查看详情', 64, qrY + 56)
     ctx.fillStyle = '#00e5ff'
     ctx.font = font(26, true)
-    ctx.fillText('hdulosttrack.eu.cc', 64, qrY + 108)
+    ctx.fillText('hdulosttrack.com', 64, qrY + 108)
     ctx.fillStyle = '#5f7f9e'
     ctx.font = font(20)
     ctx.fillText('杭州电子科技大学 · 智能失物招领平台', 64, H - 36)

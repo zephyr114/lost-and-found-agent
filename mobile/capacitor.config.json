@@ -3,7 +3,7 @@
   "appName": "杭电失物招领",
   "webDir": "www",
   "server": {
-    "url": "https://hdulosttrack.eu.cc",
+    "url": "https://hdulosttrack.com",
     "cleartext": false,
     "androidScheme": "https"
   },

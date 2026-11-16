@@ -1,7 +1,7 @@
-const { app, BrowserWindow, shell } = require('electron')
+﻿const { app, BrowserWindow, shell } = require('electron')
 const path = require('path')
 
-const APP_URL = process.env.LAF_URL || 'https://hdulosttrack.eu.cc'
+const APP_URL = process.env.LAF_URL || 'https://hdulosttrack.com'
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -42,3 +42,4 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
+
