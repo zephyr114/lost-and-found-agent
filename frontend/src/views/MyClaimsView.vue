@@ -12,6 +12,7 @@ const total = ref(0)
 const loading = ref(false)
 const page = ref(1)
 const size = 10
+const isMobile = ref(false)
 
 async function load() {
   loading.value = true
@@ -35,14 +36,17 @@ async function onCancel(claim: Claim) {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  isMobile.value = window.matchMedia('(max-width: 720px)').matches
+  load()
+})
 </script>
 
 <template>
   <div class="claims-page">
     <el-card shadow="never">
       <template #header><span>我的认领申请</span></template>
-      <el-table v-loading="loading" :data="claims" border stripe>
+      <el-table v-if="!isMobile" v-loading="loading" :data="claims" border stripe>
         <el-table-column label="申请编号" width="90">
           <template #default="{ row }">#{{ row.id }}</template>
         </el-table-column>
@@ -77,6 +81,20 @@ onMounted(load)
           </template>
         </el-table-column>
       </el-table>
+      <div v-else class="claim-cards" v-loading="loading">
+        <div v-for="row in claims" :key="row.id" class="claim-card">
+          <div class="claim-card__head">
+            <el-link type="primary" @click="router.push(`/items/${row.item_id}`)">{{ row.item_title }}</el-link>
+            <el-tag size="small" :type="claimStatusTag[row.status]">{{ claimStatusText[row.status] }}</el-tag>
+          </div>
+          <p class="claim-card__proof">{{ row.proof_description }}</p>
+          <div v-if="row.review_comment" class="claim-card__comment">处理意见：{{ row.review_comment }}</div>
+          <div v-if="row.status === 'pending' || row.status === 'need_more_proof'" class="claim-card__actions">
+            <el-button type="danger" size="small" plain @click="onCancel(row)">撤回申请</el-button>
+          </div>
+        </div>
+        <el-empty v-if="!claims.length && !loading" description="暂无认领申请" />
+      </div>
       <div class="claims-page__pager">
         <el-pagination
           v-model:current-page="page"
@@ -91,6 +109,40 @@ onMounted(load)
 </template>
 
 <style scoped>
+.claim-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.claim-card {
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(8, 25, 43, 0.6);
+}
+.claim-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.claim-card__proof {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #d7e9fa;
+}
+.claim-card__comment {
+  font-size: 13px;
+  color: #8fb3d9;
+  margin-bottom: 8px;
+}
+.claim-card__actions {
+  display: flex;
+  gap: 8px;
+}
+
 .claims-page {
   max-width: 1080px;
   margin: 0 auto;

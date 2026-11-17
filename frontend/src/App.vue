@@ -380,10 +380,20 @@ function handleCommand(cmd: string) {
 }
 
 @media (max-width: 480px) {
+  .app-header {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
   .app-logo__text {
-    max-width: 190px;
+    max-width: 168px;
+    font-size: 14px;
+    letter-spacing: 0;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .app-footer {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
   }
   .app-footer__motto {
     letter-spacing: 0.18em;

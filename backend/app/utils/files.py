@@ -43,9 +43,11 @@ def _normalize(content: bytes, filename: str, content_type: str) -> tuple[bytes,
     if ct == "image/gif":
         return content, ct, ext
     try:
-        from PIL import Image
+        from PIL import Image, ImageOps
 
         img = Image.open(io.BytesIO(content))
+        # 手机拍照常带 EXIF 方向信息，先按 EXIF 旋转再压缩，避免上传后图片躺倒
+        img = ImageOps.exif_transpose(img)
         img = img.convert("RGB")
         if max(img.size) > MAX_SIDE:
             img.thumbnail((MAX_SIDE, MAX_SIDE))

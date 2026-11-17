@@ -23,6 +23,7 @@ body {
 
 #app {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* 仅供屏幕阅读器（视觉隐藏但保留语义） */

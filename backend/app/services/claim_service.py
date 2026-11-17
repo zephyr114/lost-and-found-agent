@@ -34,7 +34,11 @@ def serialize_claim(db: Session, claim: Claim) -> dict:
         "applicant_name": applicant.username if applicant else None,
         "proof_description": claim.proof_description,
         "proof_images": claim.proof_images or [],
-        "contact": claim.contact,
+        "contact": (
+            claim.contact
+            or (applicant.phone if applicant and applicant.phone else None)
+            or (applicant.email if applicant else None)
+        ),
         "status": claim.status,
         "review_comment": claim.review_comment,
         "created_at": claim.created_at,
@@ -78,7 +82,7 @@ def create_claim(
         applicant_id=applicant.id,
         proof_description=proof_description,
         proof_images=proof_images or [],
-        contact=contact,
+        contact=contact or applicant.phone or applicant.email,
         status="pending",
     )
     db.add(claim)
