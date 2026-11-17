@@ -58,7 +58,15 @@ const campusLocations = [
   '其他',
 ]
 
+const isMobile = ref(false)
 const fileList = ref<UploadUserFile[]>([])
+// 移动端用系统原生 datetime-local，避免 Element Plus 面板超出屏幕
+const nativeTime = computed({
+  get: () => (form.event_time ? form.event_time.slice(0, 16) : ''),
+  set: (v: string) => {
+    form.event_time = v ? `${v.replace('T', ' ')}:00` : ''
+  },
+})
 const maxImages = 6
 
 // ---- AI 一键填充 ----
@@ -342,6 +350,7 @@ async function onPrecheck() {
 }
 
 onMounted(async () => {
+  isMobile.value = window.matchMedia('(max-width: 720px)').matches
   setupVoice()
   categories.value = await getCategories()
   await load()
@@ -489,7 +498,14 @@ onMounted(async () => {
           </el-col>
           <el-col :xs="24" :sm="12">
             <el-form-item :label="itemType === 'lost' ? '丢失时间 *' : '拾获时间 *'">
+              <input
+                v-if="isMobile"
+                v-model="nativeTime"
+                class="native-datetime"
+                type="datetime-local"
+              />
               <el-date-picker
+                v-else
                 v-model="form.event_time"
                 type="datetime"
                 placeholder="选择时间"
@@ -568,6 +584,23 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.native-datetime {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 229, 255, 0.22);
+  background: rgba(8, 25, 43, 0.6);
+  color: #eaf6ff;
+  font-size: 14px;
+  color-scheme: dark;
+}
+.native-datetime:focus {
+  outline: none;
+  border-color: #00e5ff;
+  box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.18);
+}
+
 .form-page {
   max-width: 860px;
   margin: 0 auto;

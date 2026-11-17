@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import { onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -65,6 +66,7 @@ function handleCommand(cmd: string) {
 </script>
 
 <template>
+  <el-config-provider :locale="zhCn">
   <div class="app-shell">
     <a class="skip-link" href="#main-content">跳到主要内容</a>
     <ParticleBackground />
@@ -143,6 +145,7 @@ function handleCommand(cmd: string) {
       <div class="app-footer__links"><router-link to="/terms">用户协议</router-link><span>·</span><router-link to="/privacy">隐私政策</router-link></div>
     </footer>
   </div>
+  </el-config-provider>
 </template>
 
 <style scoped>
