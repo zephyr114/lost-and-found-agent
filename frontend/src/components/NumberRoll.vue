@@ -7,7 +7,7 @@ const props = withDefaults(
     duration?: number
     suffix?: string
   }>(),
-  { duration: 900, suffix: '' },
+  { duration: 600, suffix: '' },
 )
 
 const display = ref(0)
@@ -15,6 +15,11 @@ let raf = 0
 
 function animate(from: number, to: number) {
   cancelAnimationFrame(raf)
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  if (reduce) {
+    display.value = to
+    return
+  }
   const start = performance.now()
   const step = (now: number) => {
     const progress = Math.min((now - start) / props.duration, 1)

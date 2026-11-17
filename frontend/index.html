@@ -13,9 +13,43 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="失物招领" />
     <title>杭州电子科技大学 · 智能失物招领</title>
+    <style>
+      /* 首屏骨架：JS 加载前先给出品牌与加载反馈，避免白屏 */
+      html, body { margin: 0; background: #050a14; }
+      .boot {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        color: #eaf6ff;
+        font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+        background: radial-gradient(circle at 70% 10%, rgba(0, 229, 255, 0.16), transparent 55%), #050a14;
+      }
+      .boot__logo {
+        width: 56px; height: 56px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 18px; color: #04121f;
+        background: linear-gradient(135deg, #00e5ff, #0077ff);
+        box-shadow: 0 0 28px rgba(0, 229, 255, 0.45);
+      }
+      .boot__title { font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
+      .boot__tip { font-size: 12px; color: #7f9dbb; }
+      .boot__bar { width: 160px; height: 3px; border-radius: 999px; background: rgba(0, 229, 255, 0.16); overflow: hidden; }
+      .boot__bar i { display: block; width: 40%; height: 100%; border-radius: 999px; background: #00e5ff; animation: boot-slide 1.1s ease-in-out infinite; }
+      @keyframes boot-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="boot">
+        <div class="boot__logo">HDU</div>
+        <div class="boot__title">杭州电子科技大学 · 智能失物招领</div>
+        <div class="boot__bar"><i></i></div>
+        <div class="boot__tip">正在加载，请稍候…</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

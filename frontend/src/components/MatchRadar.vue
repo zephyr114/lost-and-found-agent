@@ -1,77 +1,158 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import * as echarts from 'echarts/core'
-import { RadarChart } from 'echarts/charts'
-import { TooltipComponent } from 'echarts/components'
-import { CanvasRenderer } from 'echarts/renderers'
-
-echarts.use([RadarChart, TooltipComponent, CanvasRenderer])
+import { computed } from 'vue'
 
 const props = defineProps<{ dimensions: Record<string, number> }>()
-
-const el = ref<HTMLElement | null>(null)
-let chart: echarts.ECharts | null = null
 
 const DIM_KEYS = ['category', 'title', 'color', 'brand', 'time', 'distance', 'feature']
 const DIM_LABELS = ['类别', '名称', '颜色', '品牌', '时间', '距离', '特征']
 
-function render() {
-  if (!el.value) return
-  chart ??= echarts.init(el.value)
-  const values = DIM_KEYS.map((k) => props.dimensions[k] ?? 0)
-  chart.setOption({
-    radar: {
-      indicator: DIM_LABELS.map((name) => ({ name, max: 100 })),
-      radius: '60%',
-      center: ['50%', '54%'],
-      axisName: { color: '#8fb3d9', fontSize: 10 },
-      splitArea: { areaStyle: { color: ['rgba(0, 229, 255, 0.04)', 'rgba(255, 255, 255, 0.02)'] } },
-      axisLine: { lineStyle: { color: 'rgba(0, 229, 255, 0.16)' } },
-      splitLine: { lineStyle: { color: 'rgba(0, 229, 255, 0.14)' } },
-    },
-    series: [
-      {
-        type: 'radar',
-        symbol: 'circle',
-        symbolSize: 4,
-        data: [
-          {
-            value: values,
-            name: '匹配度',
-            areaStyle: { color: 'rgba(0, 229, 255, 0.22)' },
-            lineStyle: { color: '#00e5ff', width: 2 },
-            itemStyle: { color: '#00e5ff' },
-          },
-        ],
-      },
-    ],
-  })
+const CX = 150
+const CY = 124
+const R = 84
+
+function angle(i: number) {
+  return -Math.PI / 2 + (i * 2 * Math.PI) / DIM_LABELS.length
 }
 
-function resize() {
-  chart?.resize()
-}
+const values = computed(() =>
+  DIM_KEYS.map((k) => Math.max(0, Math.min(100, Math.round(props.dimensions?.[k] ?? 0)))),
+)
 
-onMounted(() => {
-  render()
-  window.addEventListener('resize', resize)
-})
+const points = computed(() =>
+  values.value.map((v, i) => {
+    const r = (R * v) / 100
+    return { x: CX + Math.cos(angle(i)) * r, y: CY + Math.sin(angle(i)) * r, v }
+  }),
+)
 
-watch(() => props.dimensions, render, { deep: true })
+const areaPoints = computed(() =>
+  points.value.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+)
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', resize)
-  chart?.dispose()
-})
+const rings = computed(() =>
+  [0.25, 0.5, 0.75, 1].map((f) =>
+    DIM_LABELS.map((_, i) => {
+      const r = R * f
+      return `${(CX + Math.cos(angle(i)) * r).toFixed(1)},${(CY + Math.sin(angle(i)) * r).toFixed(1)}`
+    }).join(' '),
+  ),
+)
+
+const axes = computed(() =>
+  DIM_LABELS.map((_, i) => ({
+    x: CX + Math.cos(angle(i)) * R,
+    y: CY + Math.sin(angle(i)) * R,
+  })),
+)
+
+const labels = computed(() =>
+  DIM_LABELS.map((label, i) => {
+    const x = CX + Math.cos(angle(i)) * (R + 26)
+    const y = CY + Math.sin(angle(i)) * (R + 26)
+    const anchor = x < CX - 8 ? 'end' : x > CX + 8 ? 'start' : 'middle'
+    return { x, y, label, value: values.value[i], anchor }
+  }),
+)
 </script>
 
 <template>
-  <div ref="el" class="match-radar" />
+  <svg class="match-radar" viewBox="0 0 300 250" role="img" aria-label="匹配度七维雷达图">
+    <defs>
+      <linearGradient id="radarFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="#00e5ff" stop-opacity="0.08" />
+      </linearGradient>
+    </defs>
+
+    <!-- 网格环 -->
+    <polygon
+      v-for="(ring, i) in rings"
+      :key="`ring-${i}`"
+      :points="ring"
+      fill="none"
+      stroke="rgba(0, 229, 255, 0.14)"
+      stroke-width="1"
+    />
+    <!-- 轴线 -->
+    <line
+      v-for="(p, i) in axes"
+      :key="`axis-${i}`"
+      :x1="CX"
+      :y1="CY"
+      :x2="p.x"
+      :y2="p.y"
+      stroke="rgba(0, 229, 255, 0.16)"
+      stroke-width="1"
+    />
+
+    <!-- 数据区域 -->
+    <polygon :points="areaPoints" fill="url(#radarFill)" stroke="#00e5ff" stroke-width="2" class="match-radar__area" />
+
+    <!-- 顶点 -->
+    <circle v-for="(p, i) in points" :key="`pt-${i}`" :cx="p.x" :cy="p.y" r="3.5" fill="#00e5ff">
+      <title>{{ DIM_LABELS[i] }}：{{ p.v }}</title>
+    </circle>
+
+    <!-- 标签 + 分数 -->
+    <g class="match-radar__labels">
+      <text
+        v-for="(l, i) in labels"
+        :key="`lb-${i}`"
+        :x="l.x"
+        :y="l.y"
+        :text-anchor="l.anchor"
+        dominant-baseline="middle"
+      >
+        <tspan class="match-radar__name">{{ l.label }}</tspan>
+        <tspan class="match-radar__val" :x="l.x" dy="13">{{ l.value }}</tspan>
+      </text>
+    </g>
+  </svg>
 </template>
 
 <style scoped>
 .match-radar {
+  display: block;
   width: 100%;
-  height: 190px;
+  height: auto;
+  overflow: visible;
+  animation: radar-in 0.45s ease-out;
+}
+.match-radar__area {
+  transform-origin: 150px 124px;
+  animation: radar-grow 0.5s ease-out;
+}
+.match-radar__name {
+  fill: #8fb3d9;
+  font-size: 10px;
+}
+.match-radar__val {
+  fill: #00e5ff;
+  font-size: 10px;
+  font-weight: 700;
+}
+@keyframes radar-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes radar-grow {
+  from {
+    transform: scale(0.92);
+    opacity: 0.3;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .match-radar,
+  .match-radar__area {
+    animation: none;
+  }
 }
 </style>

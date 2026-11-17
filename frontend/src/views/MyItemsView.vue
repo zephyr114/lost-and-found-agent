@@ -12,6 +12,7 @@ const total = ref(0)
 const loading = ref(false)
 const page = ref(1)
 const size = 10
+const isMobile = ref(false)
 
 async function load() {
   loading.value = true
@@ -48,7 +49,16 @@ async function onDelete(item: Item) {
   }
 }
 
-onMounted(load)
+function formatTime(t: string): string {
+  const d = new Date(t)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+onMounted(() => {
+  isMobile.value = window.matchMedia('(max-width: 720px)').matches
+  load()
+})
 </script>
 
 <template>
@@ -60,7 +70,7 @@ onMounted(load)
           <el-button type="primary" size="small" @click="router.push('/publish/lost')">发布失物</el-button>
         </div>
       </template>
-      <el-table v-loading="loading" :data="items" border stripe>
+      <el-table v-if="!isMobile" v-loading="loading" :data="items" border stripe>
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column label="类型" width="90">
           <template #default="{ row }">
@@ -75,7 +85,7 @@ onMounted(load)
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="发布时间" width="170">
-          <template #default="{ row }">{{ new Date(row.created_at).toLocaleString('zh-CN') }}</template>
+          <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
@@ -85,6 +95,28 @@ onMounted(load)
           </template>
         </el-table-column>
       </el-table>
+      <div v-else class="my-items__cards" v-loading="loading">
+        <div v-for="row in items" :key="row.id" class="my-item-card">
+          <div class="my-item-card__top">
+            <el-tag size="small" :type="row.item_type === 'lost' ? 'danger' : 'success'">{{ typeText(row.item_type) }}</el-tag>
+            <span class="my-item-card__title">{{ row.title }}</span>
+          </div>
+          <div class="my-item-card__meta">
+            <span>#{{ row.id }}</span>
+            <span>{{ row.category }}</span>
+            <el-tag size="small" :type="auditTag(row.audit_status)">{{ auditText(row.audit_status) }}</el-tag>
+          </div>
+          <div class="my-item-card__time">发布于 {{ formatTime(row.created_at) }}</div>
+          <div class="my-item-card__actions">
+            <el-button size="small" @click="router.push(`/items/${row.id}`)">查看</el-button>
+            <el-button size="small" type="primary" plain @click="router.push(`/items/${row.id}/edit`)">编辑</el-button>
+            <el-button size="small" type="danger" plain @click="onDelete(row)">删除</el-button>
+          </div>
+        </div>
+        <el-empty v-if="!items.length && !loading" description="还没有发布过信息">
+          <el-button type="primary" @click="router.push('/publish/lost')">去发布失物</el-button>
+        </el-empty>
+      </div>
       <div class="my-items-page__pager">
         <el-pagination
           v-model:current-page="page"
@@ -99,6 +131,55 @@ onMounted(load)
 </template>
 
 <style scoped>
+.my-items__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.my-item-card {
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(8, 25, 43, 0.6);
+}
+.my-item-card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.my-item-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #eaf6ff;
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.my-item-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #8fb3d9;
+  margin-bottom: 6px;
+}
+.my-item-card__time {
+  font-size: 12px;
+  color: #6f8fae;
+  margin-bottom: 12px;
+}
+.my-item-card__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.my-item-card__actions .el-button {
+  flex: 1;
+  margin: 0;
+}
+
 .my-items-page {
   max-width: 1080px;
   margin: 0 auto;

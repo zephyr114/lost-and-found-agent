@@ -1,4 +1,4 @@
-import { fileURLToPath, URL } from 'node:url'
+﻿import { fileURLToPath, URL } from 'node:url'
 
 import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
@@ -50,6 +50,7 @@ export default defineConfig({
         // 拆包：框架 / 图表 / 其余第三方
         // 注意：不再把所有 element-plus 打进一个共享 chunk，
         // 否则首页会被迫下载管理后台/表单才用到的组件；交给 Vite 按路由自然拆分。
+        experimentalMinChunkSize: 30000,
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return
           if (id.includes('echarts') || id.includes('zrender')) return 'echarts'
@@ -70,3 +71,4 @@ export default defineConfig({
     },
   },
 })
+

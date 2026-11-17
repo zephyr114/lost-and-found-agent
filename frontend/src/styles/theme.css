@@ -285,3 +285,11 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   }
 }
 
+/* 移动端关闭毛玻璃：中低端安卓机型滚动更顺滑 */
+@media (max-width: 560px) {
+  .glass {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(6, 20, 34, 0.94) !important;
+  }
+}

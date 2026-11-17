@@ -17,9 +17,13 @@ interface Particle {
 }
 
 let particles: Particle[] = []
+let lastFrame = 0
 
 function initParticles() {
-  const count = Math.min(80, Math.floor((width * height) / 22000))
+  const isSmall = width < 640
+  const count = isSmall
+    ? Math.min(26, Math.max(14, Math.floor((width * height) / 42000)))
+    : Math.min(80, Math.floor((width * height) / 22000))
   particles = Array.from({ length: count }, () => ({
     x: Math.random() * width,
     y: Math.random() * height,
@@ -45,8 +49,14 @@ function drawGrid(c: CanvasRenderingContext2D) {
   c.stroke()
 }
 
-function draw() {
+function draw(now = 0) {
   if (!ctx) return
+  // 移动端 30fps 上限，减少滚动时的掉帧
+  if (now - lastFrame < 33) {
+    if (running) raf = requestAnimationFrame(draw)
+    return
+  }
+  lastFrame = now
   ctx.clearRect(0, 0, width, height)
   drawGrid(ctx)
 
@@ -69,8 +79,9 @@ function draw() {
       const dx = a.x - b.x
       const dy = a.y - b.y
       const dist = Math.sqrt(dx * dx + dy * dy)
-      if (dist < 120) {
-        ctx.strokeStyle = `rgba(0, 229, 255, ${0.12 * (1 - dist / 120)})`
+      const maxDist = width < 640 ? 86 : 120
+      if (dist < maxDist) {
+        ctx.strokeStyle = `rgba(0, 229, 255, ${0.12 * (1 - dist / maxDist)})`
         ctx.beginPath()
         ctx.moveTo(a.x, a.y)
         ctx.lineTo(b.x, b.y)

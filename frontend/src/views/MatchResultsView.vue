@@ -448,4 +448,69 @@ onMounted(loadItems)
   font-size: 12px;
   color: var(--el-text-color-secondary);
 }
+
+/* 移动端：匹配卡片改为纵向堆叠，避免标题竖排、按钮溢出 */
+@media (max-width: 640px) {
+  .matches-page__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .matches-page__tools {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .matches-page__tools :deep(.el-select) {
+    width: 100% !important;
+  }
+  .matches-page__tools .el-button {
+    width: 100%;
+  }
+  .match-card {
+    padding: 12px;
+  }
+  .match-card__main {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .match-card__item,
+  .match-card__item:last-child {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .match-card__item span {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .match-card__score {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .match-card__score-num {
+    font-size: 30px;
+  }
+  .match-card__score-text {
+    font-size: 12px;
+  }
+  .match-card__confirm,
+  .match-card__dims {
+    width: 100%;
+  }
+  .match-card__confirm .el-button,
+  .match-card__dims .el-button {
+    width: 100%;
+  }
+  .match-radar {
+    padding: 0 4px;
+  }
+}
 </style>
