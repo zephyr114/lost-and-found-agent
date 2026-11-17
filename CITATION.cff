@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this project, please cite it as below."
+title: "失物招领智能平台（Lost-and-Found Intelligent Platform）"
+abstract: "面向高校校园的失物招领平台：对话式发布、7 维可解释匹配、扫码交接与认领可信度预检。"
+authors:
+  - name: "HDU Lost-and-Found Team (杭州电子科技大学 失物招领团队)"
+version: 1.0.0
+date-released: 2026-11-17
+url: "https://hdulosttrack.com"
+repository-code: "https://github.com/zephyr114/lost-and-found-agent"
+license: MIT
+keywords:
+  - lost and found
+  - campus
+  - AI matching
+  - FastAPI
+  - Vue
