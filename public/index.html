@@ -2,7 +2,9 @@
 <html lang="zh-CN" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="杭州电子科技大学 · 智能失物招领平台：发布失物/招领、AI 智能匹配、认领与消息沟通" />
     <meta name="theme-color" content="#050a14" />
@@ -28,11 +30,9 @@
         background: radial-gradient(circle at 70% 10%, rgba(0, 229, 255, 0.16), transparent 55%), #050a14;
       }
       .boot__logo {
-        width: 56px; height: 56px; border-radius: 14px;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 800; font-size: 18px; color: #04121f;
-        background: linear-gradient(135deg, #00e5ff, #0077ff);
-        box-shadow: 0 0 28px rgba(0, 229, 255, 0.45);
+        width: 64px; height: 64px; border-radius: 16px;
+        object-fit: contain;
+        box-shadow: 0 0 28px rgba(0, 229, 255, 0.35);
       }
       .boot__title { font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
       .boot__tip { font-size: 12px; color: #7f9dbb; }
@@ -40,15 +40,15 @@
       .boot__bar i { display: block; width: 40%; height: 100%; border-radius: 999px; background: #00e5ff; animation: boot-slide 1.1s ease-in-out infinite; }
       @keyframes boot-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
     </style>
-    <script type="module" crossorigin src="/assets/index-DAWDlKH1.js"></script>
+    <script type="module" crossorigin src="/assets/index-BewcIM6Y.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/vue-D3atGuRC.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-Bckgx-jp.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-Do28lAxT.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-De57p6nC.css">
   </head>
   <body>
     <div id="app">
       <div class="boot">
-        <div class="boot__logo">HDU</div>
+        <img class="boot__logo" src="/icons/icon-192.png" alt="" />
         <div class="boot__title">杭州电子科技大学 · 智能失物招领</div>
         <div class="boot__bar"><i></i></div>
         <div class="boot__tip">正在加载，请稍候…</div>

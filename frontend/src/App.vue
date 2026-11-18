@@ -75,7 +75,7 @@ function handleCommand(cmd: string) {
     <header class="app-header">
       <div class="app-header__inner">
         <router-link to="/" class="app-logo">
-          <span class="hdu-badge">HDU</span>
+          <img class="app-logo__mark" src="/logo-mark.png" alt="HDU 失物招领" />
           <span class="app-logo__text">杭州电子科技大学 <em class="app-logo__dot">·</em> 智能失物招领</span>
         </router-link>
 
@@ -211,6 +211,13 @@ function handleCommand(cmd: string) {
   display: flex;
   align-items: center;
   gap: 18px;
+}
+
+.app-logo__mark {
+  height: 32px;
+  width: auto;
+  display: block;
+  flex: none;
 }
 
 .app-logo {
@@ -387,10 +394,8 @@ function handleCommand(cmd: string) {
     padding: 6px 9px;
     font-size: 13.5px;
   }
-  .hdu-badge {
-    width: 32px;
-    height: 32px;
-    font-size: 11px;
+  .app-logo__mark {
+    height: 26px;
   }
   .app-main {
     padding: 16px 12px 32px;
