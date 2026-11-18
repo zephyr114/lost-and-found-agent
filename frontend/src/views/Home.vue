@@ -92,7 +92,7 @@ function open(path: string) {
         <el-button size="large" plain class="hero__secondary" @click="router.push('/publish/found')">
           发布招领
         </el-button>
-        <el-button size="large" text @click="router.push('/stats')">📊 查看数据看板 →</el-button>
+        <el-button size="large" text @click="router.push('/stats')">查看数据看板 →</el-button>
       </div>
 
       <div class="stats-strip">
@@ -125,7 +125,7 @@ function open(path: string) {
         <div v-for="s in stories" :key="s.id" class="story glass">
           <div class="story__badge">✅ 已找回</div>
           <div class="story__title">{{ s.title }}</div>
-          <div v-if="s.story" class="story__story">{{ s.story }}</div>
+          <div v-if="s.story" class="story__story">{{ s.story }}<el-tag size="small" effect="plain" class="story__ai">AI 生成</el-tag></div>
           <div class="story__meta">{{ s.location }} · {{ new Date(s.resolved_at).toLocaleDateString('zh-CN') }}</div>
         </div>
       </div>
@@ -353,6 +353,10 @@ function open(path: string) {
 }
 
 /* ---- 已找回故事墙 ---- */
+.story__ai {
+  margin-left: 6px;
+  transform: translateY(-1px);
+}
 .stories__count {
   margin-left: auto;
   font-size: 12px;

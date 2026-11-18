@@ -117,7 +117,7 @@ async function onSubmit() {
           show-icon
           class="claim-form-page__alert"
         >
-          <template #title>AI 可信度预检：{{ checkResult.score }} 分 · {{ verdictText[checkResult.verdict] }}</template>
+          <template #title>AI 可信度预检（AI 生成，仅供参考）：{{ checkResult.score }} 分 · {{ verdictText[checkResult.verdict] }}</template>
           <div v-for="r in checkResult.reasons" :key="r">· {{ r }}</div>
           <div v-if="checkResult.suggestions?.length" class="claim-form-page__tip">
             建议补充：{{ checkResult.suggestions.map((s) => s.label).join('、') }}（可提高可信度）

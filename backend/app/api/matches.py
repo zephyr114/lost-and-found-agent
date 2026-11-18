@@ -1,5 +1,7 @@
 """智能匹配接口：运行分析、查看推荐、匹配详情。"""
 
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -130,13 +132,27 @@ def _build_story(item: Item) -> str:
 @router.get("/stories", summary="已找回故事墙（公开）")
 def stories(limit: int = Query(default=8, ge=1, le=50), db: Session = Depends(get_db)):
     """返回最近完成交接（已找回）的物品，用于首页故事墙。"""
+    # 已找回：完成交接（resolved）或认领通过（claimed）都算；同一对失物/招领只展示一条
     rows = (
         db.query(Item)
-        .filter(Item.status == "resolved", Item.audit_status == "approved")
+        .filter(Item.status.in_(["resolved", "claimed"]), Item.audit_status == "approved")
         .order_by(Item.updated_at.desc())
-        .limit(limit)
+        .limit(limit * 3)
         .all()
     )
+    selected: list[Item] = []
+    seen: set[tuple[str, str]] = set()
+    for it in rows:
+        # 同一对失物/招领只保留一条：去掉「捡到 / 丢失」等前缀后按标题+地点去重
+        title = re.sub(r"^(捡到|拾到|丢失|找到|寻物启事|失物招领)[:：\s]*", "", it.title or "")
+        key = (title.strip(), it.location or "")
+        if key in seen:
+            continue
+        seen.add(key)
+        selected.append(it)
+        if len(selected) >= limit:
+            break
+    rows = selected
     return {
         "items": [
             {

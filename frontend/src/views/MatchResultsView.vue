@@ -235,6 +235,7 @@ onMounted(loadItems)
             :show-text="false"
           />
           <div class="match-card__reasons">
+            <el-tag size="small" type="info" effect="plain" class="match-card__ai">AI 生成</el-tag>
             <el-tag v-for="(reason, idx) in m.match_reason" :key="idx" size="small" type="info" effect="plain" class="match-card__reason">
               {{ reason }}
             </el-tag>
@@ -381,6 +382,9 @@ onMounted(loadItems)
 }
 .match-card__score-text {
   font-size: 12px;
+}
+.match-card__ai {
+  color: #8fb3d9;
 }
 .match-card__reasons {
   margin-top: 10px;

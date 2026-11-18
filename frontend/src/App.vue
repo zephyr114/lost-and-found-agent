@@ -81,8 +81,7 @@ function handleCommand(cmd: string) {
 
         <nav class="app-nav">
           <router-link to="/" class="app-nav__link">首页</router-link>
-          <router-link to="/items?type=lost" class="app-nav__link">失物信息</router-link>
-          <router-link to="/items?type=found" class="app-nav__link">招领信息</router-link>
+          <router-link to="/items" class="app-nav__link">失物招领</router-link>
           <router-link to="/stats" class="app-nav__link">数据看板</router-link>
           <router-link v-if="userStore.isLoggedIn" to="/matches" class="app-nav__link">智能匹配</router-link>
         </nav>
@@ -90,7 +89,7 @@ function handleCommand(cmd: string) {
         <div class="app-header__right">
           <template v-if="userStore.isLoggedIn">
             <el-badge :value="unread" :hidden="unread === 0" :max="99">
-              <el-button text class="msg-btn" @click="router.push('/messages')">💬 <span class="hide-sm">消息</span></el-button>
+              <el-button text class="msg-btn" @click="router.push('/messages')"><span class="hide-sm">消息</span></el-button>
             </el-badge>
             <el-dropdown @command="handleCommand">
               <el-button type="primary" size="small" class="glow-btn">＋ 发布</el-button>
