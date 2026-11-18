@@ -89,7 +89,15 @@ function handleCommand(cmd: string) {
         <div class="app-header__right">
           <template v-if="userStore.isLoggedIn">
             <el-badge :value="unread" :hidden="unread === 0" :max="99">
-              <el-button text class="msg-btn" @click="router.push('/messages')"><span class="hide-sm">消息</span></el-button>
+              <el-button text class="msg-btn" aria-label="消息" @click="router.push('/messages')">
+                <svg class="msg-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4.5 5.5A1.5 1.5 0 0 1 6 4h12a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 18 16h-6.6L7 19.2V16H6a1.5 1.5 0 0 1-1.5-1.5v-9Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                  <circle cx="9" cy="10" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="10" r="1" fill="currentColor"/>
+                  <circle cx="15" cy="10" r="1" fill="currentColor"/>
+                </svg>
+                <span class="hide-sm">消息</span>
+              </el-button>
             </el-badge>
             <el-dropdown @command="handleCommand">
               <el-button type="primary" size="small" class="glow-btn">＋ 发布</el-button>
@@ -280,7 +288,15 @@ function handleCommand(cmd: string) {
   gap: 10px;
 }
 
+.msg-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
 .msg-btn {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 6px 8px;
   color: #b9d4f0;
 }
 
