@@ -87,11 +87,13 @@ onMounted(() => {
         <el-table-column prop="created_at" label="发布时间" width="170">
           <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="242" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="router.push(`/items/${row.id}`)">查看</el-button>
-            <el-button size="small" type="primary" plain @click="router.push(`/items/${row.id}/edit`)">编辑</el-button>
-            <el-button size="small" type="danger" plain @click="onDelete(row)">删除</el-button>
+            <div class="row-actions">
+              <el-button size="small" @click="router.push(`/items/${row.id}`)">查看</el-button>
+              <el-button size="small" type="primary" plain @click="router.push(`/items/${row.id}/edit`)">编辑</el-button>
+              <el-button size="small" type="danger" plain @click="onDelete(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -131,6 +133,16 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+}
+.row-actions :deep(.el-button) {
+  margin-left: 0;
+}
+
 .my-items__cards {
   display: flex;
   flex-direction: column;

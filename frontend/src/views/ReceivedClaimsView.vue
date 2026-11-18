@@ -125,13 +125,13 @@ onMounted(() => {
             <el-tag size="small" :type="claimStatusTag[row.status]">{{ claimStatusText[row.status] }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
-            <template v-if="row.status === 'pending'">
+            <div v-if="row.status === 'pending'" class="row-actions">
               <el-button size="small" type="success" @click="onApprove(row)">同意</el-button>
               <el-button size="small" type="danger" plain @click="onReject(row)">拒绝</el-button>
               <el-button size="small" type="primary" plain @click="onRequestProof(row)">要求补充证明</el-button>
-            </template>
+            </div>
             <span v-else>—</span>
           </template>
         </el-table-column>
@@ -187,6 +187,16 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+}
+.row-actions :deep(.el-button) {
+  margin-left: 0;
+}
+
 .claim-cards {
   display: flex;
   flex-direction: column;
