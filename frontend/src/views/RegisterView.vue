@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
@@ -8,6 +8,7 @@ import { getAuthConfig } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const formRef = ref<FormInstance>()
@@ -26,6 +27,9 @@ onMounted(async () => {
   try {
     const cfg = await getAuthConfig()
     inviteRequired.value = cfg.invite_required
+    // 二维码链接可直接带邀请码：/register?invite=XXX
+    const q = route.query.invite
+    if (typeof q === 'string' && q) form.invite = q
   } catch {
     inviteRequired.value = false
   }
