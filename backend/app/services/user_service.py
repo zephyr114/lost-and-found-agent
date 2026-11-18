@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import hash_password, verify_password
 from app.models.user import User
 from app.schemas.auth import RegisterRequest
@@ -39,7 +40,15 @@ def _check_unique(
 
 
 def register_user(db: Session, data: RegisterRequest) -> User:
-    """创建新用户，用户名 / 邮箱 / 手机号冲突返回 409。"""
+    """创建新用户，用户名 / 邮箱 / 手机号冲突返回 409。
+
+    若配置了 REGISTER_INVITE_CODE，则必须填写正确的邀请码（限制校外人员注册）。
+    """
+    if settings.register_invite_code and (data.invite_code or "").strip() != settings.register_invite_code:
+        raise HTTPException(
+            status_code=403,
+            detail="邀请码不正确。本平台仅限杭州电子科技大学师生注册，未注册也可浏览公开信息。",
+        )
     _check_unique(db, username=data.username, email=data.email, phone=data.phone or None)
     user = User(
         username=data.username,

@@ -6,11 +6,13 @@ export interface RegisterPayload {
   email: string
   phone?: string
   password: string
+  invite_code?: string
 }
 
 export interface LoginPayload {
   account: string
   password: string
+  invite_code?: string
 }
 
 export interface TokenResponse {
@@ -22,6 +24,11 @@ export interface TokenResponse {
 
 export async function register(payload: RegisterPayload): Promise<TokenResponse> {
   const { data } = await http.post<TokenResponse>('/api/auth/register', payload)
+  return data
+}
+
+export async function getAuthConfig(): Promise<{ invite_required: boolean }> {
+  const { data } = await http.get<{ invite_required: boolean }>('/api/auth/config')
   return data
 }
 

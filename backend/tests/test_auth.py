@@ -1,4 +1,4 @@
-"""第二阶段验收测试：注册、登录、JWT 鉴权、角色权限。"""
+﻿"""第二阶段验收测试：注册、登录、JWT 鉴权、角色权限。"""
 
 import uuid
 
@@ -156,3 +156,24 @@ def test_change_password_flow(client):
     # 新密码可登录，旧密码失效
     assert client.post("/api/auth/login", json={"account": payload["username"], "password": "newpass123"}).status_code == 200
     assert client.post("/api/auth/login", json={"account": payload["username"], "password": "secret123"}).status_code == 401
+
+def test_register_requires_invite_code(client, monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "register_invite_code", "HDULOST2026")
+    payload = {
+        "username": "invite_user",
+        "email": "invite_user@example.com",
+        "password": "secret123",
+    }
+    r = client.post("/api/auth/register", json=payload)
+    assert r.status_code == 403
+
+    r = client.post("/api/auth/register", json={**payload, "invite_code": "wrong"})
+    assert r.status_code == 403
+
+    r = client.post("/api/auth/register", json={**payload, "invite_code": "HDULOST2026"})
+    assert r.status_code == 201
+
+    cfg = client.get("/api/auth/config").json()
+    assert cfg["invite_required"] is True

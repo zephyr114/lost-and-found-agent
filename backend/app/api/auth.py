@@ -4,6 +4,7 @@ import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token, decode_refresh_token
 from app.database.session import get_db
 from app.models.user import User
@@ -11,6 +12,11 @@ from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest, Toke
 from app.services.user_service import authenticate_user, register_user
 
 router = APIRouter(prefix="/auth", tags=["认证"])
+
+
+@router.get("/config", summary="注册配置：是否需要邀请码")
+def auth_config():
+    return {"invite_required": bool(settings.register_invite_code)}
 
 
 def _token_response(user: User) -> TokenResponse:

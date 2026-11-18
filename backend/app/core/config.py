@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     rate_limit_auth_per_minute: int = 30
     rate_limit_global_per_minute: int = 300
 
+    # 注册邀请码：留空则开放注册；设置后注册必须填写（用于限制校外人员）
+    register_invite_code: str = ""
+
     # 初始管理员账号（首次启动自动创建；生产环境请在 .env 中修改）
     admin_username: str = "admin"
     admin_email: str = "admin@example.com"

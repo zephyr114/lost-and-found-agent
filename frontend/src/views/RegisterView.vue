@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
+import { getAuthConfig } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -16,8 +17,19 @@ const form = reactive({
   phone: '',
   password: '',
   confirmPassword: '',
+  invite: '',
 })
+const inviteRequired = ref(false)
 const loading = ref(false)
+
+onMounted(async () => {
+  try {
+    const cfg = await getAuthConfig()
+    inviteRequired.value = cfg.invite_required
+  } catch {
+    inviteRequired.value = false
+  }
+})
 const agree = ref(false)
 
 const rules: FormRules = {
@@ -54,6 +66,10 @@ async function onSubmit() {
     ElMessage.warning('请先阅读并同意《用户协议》和《隐私政策》')
     return
   }
+  if (inviteRequired.value && !form.invite.trim()) {
+    ElMessage.warning('请输入邀请码（仅限杭电师生注册）')
+    return
+  }
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
   loading.value = true
@@ -63,6 +79,7 @@ async function onSubmit() {
       email: form.email,
       phone: form.phone || undefined,
       password: form.password,
+      invite_code: form.invite.trim() || undefined,
     })
     ElMessage.success('注册成功，已自动登录')
     router.push('/')
@@ -97,6 +114,9 @@ async function onSubmit() {
         <el-form-item label="密码" prop="password">
           <el-input v-model="form.password" type="password" placeholder="至少 8 位" show-password />
         </el-form-item>
+        <el-form-item v-if="inviteRequired" label="邀请码 *">
+          <el-input v-model="form.invite" placeholder="班级群 / 社团群里发的邀请码" clearable />
+        </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
           <el-input v-model="form.confirmPassword" type="password" placeholder="再次输入密码" show-password />
         </el-form-item>
@@ -111,9 +131,20 @@ async function onSubmit() {
         <el-button type="primary" class="auth-card__submit" :loading="loading" native-type="submit">
           注 册
         </el-button>
+        <el-alert
+          v-if="inviteRequired"
+          type="info"
+          :closable="false"
+          show-icon
+          class="auth-card__notice"
+          title="仅限杭州电子科技大学师生注册"
+          description="没有邀请码也可以直接浏览公开的失物与招领信息。"
+        />
         <div class="auth-card__footer">
           已有账号？
           <router-link to="/login">去登录</router-link>
+          <span class="auth-card__sep">·</span>
+          <router-link to="/">先随便逛逛</router-link>
         </div>
       </el-form>
     </el-card>
@@ -121,6 +152,14 @@ async function onSubmit() {
 </template>
 
 <style scoped>
+.auth-card__notice {
+  margin-bottom: 12px;
+}
+.auth-card__sep {
+  margin: 0 6px;
+  color: #5f7f9e;
+}
+
 .auth-page {
   display: flex;
   justify-content: center;

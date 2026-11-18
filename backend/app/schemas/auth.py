@@ -12,6 +12,7 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     phone: str | None = Field(default=None, max_length=20)
     password: str = Field(min_length=8, max_length=72)
+    invite_code: str | None = Field(default=None, max_length=64)
 
 
 class LoginRequest(BaseModel):
